@@ -447,19 +447,19 @@ export function AdminPanel() {
           <span className="admin-kicker">Área administrativa</span>
           <h1>Casas do Centro</h1>
           <p>
-            Painel piloto para editar textos principais, contactos, modelos, vantagens, FAQ e imagens.
+            Painel piloto para editar textos principais, imagens, modelos, vantagens, FAQ e contactos.
           </p>
         </div>
 
         <nav className="admin-sidebar-nav">
           <a href="#hero">Homepage</a>
+          <a href="#imagem">Imagem principal</a>
           <a href="#sobre">Sobre nós</a>
           <a href="#modelos">Modelos</a>
           <a href="#vantagens">Vantagens</a>
+          <a href="#galeria">Galeria</a>
           <a href="#faq-admin">FAQ</a>
           <a href="#contactos">Contactos</a>
-          <a href="#imagem">Imagem principal</a>
-          <a href="#galeria">Galeria</a>
         </nav>
 
         <a className="admin-back-link" href="/">
@@ -552,6 +552,31 @@ export function AdminPanel() {
                   />
                 </label>
               </div>
+            </div>
+
+            <div id="imagem" className="admin-card">
+              <div className="admin-card-heading">
+                <ImagePlus size={22} />
+                <div>
+                  <h3>Imagem principal</h3>
+                  <p>Upload de teste para substituir a imagem da homepage neste navegador.</p>
+                </div>
+              </div>
+
+              <label className="admin-upload">
+                <ImagePlus size={26} />
+                <span>Escolher imagem</span>
+                <small>Formato recomendado: JPG ou JPEG, horizontal.</small>
+                <input type="file" accept="image/*" onChange={handleHeroImageUpload} />
+              </label>
+
+              {draft.heroImageDataUrl && (
+                <img
+                  className="admin-upload-preview"
+                  src={draft.heroImageDataUrl}
+                  alt="Pré-visualização da imagem principal"
+                />
+              )}
             </div>
 
             <div id="sobre" className="admin-card">
@@ -686,6 +711,69 @@ export function AdminPanel() {
               </div>
             </div>
 
+            <div id="galeria" className="admin-card">
+              <div className="admin-card-heading">
+                <Images size={22} />
+                <div>
+                  <h3>Galeria</h3>
+                  <p>Editar nomes e imagens dos blocos da galeria do website.</p>
+                </div>
+              </div>
+
+              <label>
+                Nomes dos blocos da galeria
+                <small>Coloca um nome por linha. A ordem aqui será a ordem no site.</small>
+                <textarea
+                  rows={6}
+                  value={draft.gallery.itemsText}
+                  onChange={(event) => updateGalleryField('itemsText', event.target.value)}
+                />
+              </label>
+
+              <div className="admin-gallery-editor">
+                {previewContent.galleryItems.map((item, index) => (
+                  <div className="admin-gallery-card" key={`${item}-${index}`}>
+                    <div>
+                      <strong>{item}</strong>
+                      <small>Imagem {index + 1}</small>
+                    </div>
+
+                    {draft.gallery.imagesDataUrls[index] ? (
+                      <img
+                        src={draft.gallery.imagesDataUrls[index]}
+                        alt={`Imagem da galeria ${item}`}
+                      />
+                    ) : (
+                      <div className="admin-gallery-placeholder">
+                        <Images size={26} />
+                        <span>Sem imagem</span>
+                      </div>
+                    )}
+
+                    <label className="admin-gallery-upload">
+                      <ImagePlus size={18} />
+                      Escolher imagem
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(event) => handleGalleryImageUpload(index, event)}
+                      />
+                    </label>
+
+                    {draft.gallery.imagesDataUrls[index] && (
+                      <button
+                        type="button"
+                        className="admin-remove-image"
+                        onClick={() => removeGalleryImage(index)}
+                      >
+                        Remover imagem
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
             <div id="faq-admin" className="admin-card">
               <div className="admin-card-heading">
                 <HelpCircle size={22} />
@@ -791,94 +879,6 @@ export function AdminPanel() {
               </label>
             </div>
 
-            <div id="imagem" className="admin-card">
-              <div className="admin-card-heading">
-                <ImagePlus size={22} />
-                <div>
-                  <h3>Imagem principal</h3>
-                  <p>Upload de teste para substituir a imagem da homepage neste navegador.</p>
-                </div>
-              </div>
-
-              <label className="admin-upload">
-                <ImagePlus size={26} />
-                <span>Escolher imagem</span>
-                <small>Formato recomendado: JPG ou JPEG, horizontal.</small>
-                <input type="file" accept="image/*" onChange={handleHeroImageUpload} />
-              </label>
-
-              {draft.heroImageDataUrl && (
-                <img
-                  className="admin-upload-preview"
-                  src={draft.heroImageDataUrl}
-                  alt="Pré-visualização da imagem principal"
-                />
-              )}
-            </div>
-
-            <div id="galeria" className="admin-card">
-              <div className="admin-card-heading">
-                <Images size={22} />
-                <div>
-                  <h3>Galeria</h3>
-                  <p>Editar nomes e imagens dos blocos da galeria do website.</p>
-                </div>
-              </div>
-
-              <label>
-                Nomes dos blocos da galeria
-                <small>Coloca um nome por linha. A ordem aqui será a ordem no site.</small>
-                <textarea
-                  rows={6}
-                  value={draft.gallery.itemsText}
-                  onChange={(event) => updateGalleryField('itemsText', event.target.value)}
-                />
-              </label>
-
-              <div className="admin-gallery-editor">
-                {previewContent.galleryItems.map((item, index) => (
-                  <div className="admin-gallery-card" key={`${item}-${index}`}>
-                    <div>
-                      <strong>{item}</strong>
-                      <small>Imagem {index + 1}</small>
-                    </div>
-
-                    {draft.gallery.imagesDataUrls[index] ? (
-                      <img
-                        src={draft.gallery.imagesDataUrls[index]}
-                        alt={`Imagem da galeria ${item}`}
-                      />
-                    ) : (
-                      <div className="admin-gallery-placeholder">
-                        <Images size={26} />
-                        <span>Sem imagem</span>
-                      </div>
-                    )}
-
-                    <label className="admin-gallery-upload">
-                      <ImagePlus size={18} />
-                      Escolher imagem
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={(event) => handleGalleryImageUpload(index, event)}
-                      />
-                    </label>
-
-                    {draft.gallery.imagesDataUrls[index] && (
-                      <button
-                        type="button"
-                        className="admin-remove-image"
-                        onClick={() => removeGalleryImage(index)}
-                      >
-                        Remover imagem
-                      </button>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-
             <div className="admin-save-bar">
               <button type="submit" className="admin-save-button">
                 <Save size={20} />
@@ -930,21 +930,21 @@ export function AdminPanel() {
             </div>
 
             <div className="admin-preview-card small">
-              <span className="admin-kicker">FAQ</span>
-              <h3>{draft.faq.title}</h3>
-              <div className="admin-preview-tags">
-                {draft.faq.items.map((faq) => (
-                  <span key={faq.question}>{faq.question}</span>
-                ))}
-              </div>
-            </div>
-
-            <div className="admin-preview-card small">
               <span className="admin-kicker">Galeria</span>
               <h3>Blocos configurados</h3>
               <div className="admin-preview-tags">
                 {previewContent.galleryItems.map((item) => (
                   <span key={item}>{item}</span>
+                ))}
+              </div>
+            </div>
+
+            <div className="admin-preview-card small">
+              <span className="admin-kicker">FAQ</span>
+              <h3>{draft.faq.title}</h3>
+              <div className="admin-preview-tags">
+                {draft.faq.items.map((faq) => (
+                  <span key={faq.question}>{faq.question}</span>
                 ))}
               </div>
             </div>
