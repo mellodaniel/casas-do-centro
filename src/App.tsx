@@ -20,7 +20,7 @@ import {
 import { useState } from 'react';
 import './index.css';
 import logo from './assets/logo.png';
-import heroImage from './assets/hero-casa-madeira.jpg';
+import heroImage from './assets/hero-casa-madeira.jpeg';
 
 function App() {
   const [menuOpen, setMenuOpen] = useState(false);
