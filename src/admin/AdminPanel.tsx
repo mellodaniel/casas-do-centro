@@ -1,5 +1,5 @@
 import type { ChangeEvent, FormEvent } from 'react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   ArrowLeft,
   ImagePlus,
@@ -12,14 +12,19 @@ import {
   LayoutList,
   BadgeCheck,
   HelpCircle,
+  LogOut,
 } from 'lucide-react';
 import { siteContent } from '../data/siteContent';
 import {
-  loadContentPatch,
-  loadSiteContent,
-  resetContentPatch,
-  saveContentPatch,
-} from '../lib/contentStorage';
+  buildSiteContent,
+  getCurrentAdminUser,
+  getSiteContentPatch,
+  saveSiteContentPatch,
+  signOutAdmin,
+  uploadSiteImage,
+  type ContentPatch,
+} from '../lib/siteContentService';
+import { AdminLogin } from './AdminLogin';
 import './admin.css';
 
 const MAX_GALLERY_IMAGES_PER_SECTION = 5;
@@ -77,12 +82,49 @@ type AdminDraft = {
   };
   gallery: {
     itemsText: string;
-    imagesDataUrlsBySection: string[][];
+    imagesUrlsBySection: string[][];
   };
-  heroImageDataUrl: string;
+  heroImageUrl: string;
 };
 
-function normalizeGalleryImagesBySection(patch: Record<string, any>, sectionCount: number) {
+function cleanLines(value: string) {
+  return value
+    .split('\n')
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function cleanParagraphs(value: string) {
+  return value
+    .split('\n\n')
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function mergeItemsWithIcons<T extends IconContentItem>(
+  originalItems: T[],
+  editedItems: EditablePair[]
+): T[] {
+  return originalItems.map((originalItem, index) => ({
+    ...originalItem,
+    title: editedItems[index]?.title || originalItem.title,
+    text: editedItems[index]?.text || originalItem.text,
+  }));
+}
+
+function normalizeGalleryImagesBySection(patch: ContentPatch, sectionCount: number) {
+  if (Array.isArray(patch.galleryImagesUrlsBySection)) {
+    return Array.from({ length: sectionCount }, (_, sectionIndex) => {
+      const sectionImages = patch.galleryImagesUrlsBySection[sectionIndex];
+
+      if (!Array.isArray(sectionImages)) {
+        return [];
+      }
+
+      return sectionImages.filter(Boolean).slice(0, MAX_GALLERY_IMAGES_PER_SECTION);
+    });
+  }
+
   if (Array.isArray(patch.galleryImagesDataUrlsBySection)) {
     return Array.from({ length: sectionCount }, (_, sectionIndex) => {
       const sectionImages = patch.galleryImagesDataUrlsBySection[sectionIndex];
@@ -91,28 +133,28 @@ function normalizeGalleryImagesBySection(patch: Record<string, any>, sectionCoun
         return [];
       }
 
-      return sectionImages.slice(0, MAX_GALLERY_IMAGES_PER_SECTION);
-    });
-  }
-
-  if (Array.isArray(patch.galleryImagesDataUrls)) {
-    return Array.from({ length: sectionCount }, (_, sectionIndex) => {
-      const legacyImage = patch.galleryImagesDataUrls[sectionIndex];
-
-      if (!legacyImage) {
-        return [];
-      }
-
-      return [legacyImage];
+      return sectionImages.filter(Boolean).slice(0, MAX_GALLERY_IMAGES_PER_SECTION);
     });
   }
 
   return Array.from({ length: sectionCount }, () => []);
 }
 
-function createInitialDraft(): AdminDraft {
-  const content = loadSiteContent(siteContent);
-  const patch = loadContentPatch();
+function ensureGallerySectionSlots(imagesBySection: string[][], sectionCount: number) {
+  return Array.from({ length: sectionCount }, (_, sectionIndex) => {
+    const sectionImages = imagesBySection[sectionIndex];
+
+    if (!Array.isArray(sectionImages)) {
+      return [];
+    }
+
+    return sectionImages.filter(Boolean).slice(0, MAX_GALLERY_IMAGES_PER_SECTION);
+  });
+}
+
+function createDraftFromPatch(patch: ContentPatch): AdminDraft {
+  const content = buildSiteContent(siteContent, patch);
+  const galleryItems = content.gallery.items || [];
 
   return {
     hero: {
@@ -159,56 +201,51 @@ function createInitialDraft(): AdminDraft {
       })),
     },
     gallery: {
-      itemsText: content.gallery.items.join('\n'),
-      imagesDataUrlsBySection: normalizeGalleryImagesBySection(
-        patch,
-        content.gallery.items.length
-      ),
+      itemsText: galleryItems.join('\n'),
+      imagesUrlsBySection: normalizeGalleryImagesBySection(patch, galleryItems.length),
     },
-    heroImageDataUrl: patch.heroImageDataUrl || '',
+    heroImageUrl: patch.heroImageUrl || '',
   };
 }
 
-function cleanLines(value: string) {
-  return value
-    .split('\n')
-    .map((item) => item.trim())
-    .filter(Boolean);
-}
+export function AdminPanel() {
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoadingContent, setIsLoadingContent] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [draft, setDraft] = useState<AdminDraft>(() => createDraftFromPatch({}));
+  const [statusMessage, setStatusMessage] = useState('');
 
-function cleanParagraphs(value: string) {
-  return value
-    .split('\n\n')
-    .map((item) => item.trim())
-    .filter(Boolean);
-}
+  async function loadAdminContent() {
+    setIsLoadingContent(true);
+    setStatusMessage('');
 
-function mergeItemsWithIcons<T extends IconContentItem>(
-  originalItems: T[],
-  editedItems: EditablePair[]
-): T[] {
-  return originalItems.map((originalItem, index) => ({
-    ...originalItem,
-    title: editedItems[index]?.title || originalItem.title,
-    text: editedItems[index]?.text || originalItem.text,
-  }));
-}
+    try {
+      const patch = await getSiteContentPatch();
+      setDraft(createDraftFromPatch(patch));
+    } catch {
+      setStatusMessage('Não foi possível carregar o conteúdo do Supabase.');
+    } finally {
+      setIsLoadingContent(false);
+    }
+  }
 
-function ensureGallerySectionSlots(imagesBySection: string[][], sectionCount: number) {
-  return Array.from({ length: sectionCount }, (_, sectionIndex) => {
-    const sectionImages = imagesBySection[sectionIndex];
+  useEffect(() => {
+    async function checkUser() {
+      const user = await getCurrentAdminUser();
 
-    if (!Array.isArray(sectionImages)) {
-      return [];
+      setIsAuthenticated(Boolean(user));
+      setIsCheckingAuth(false);
+
+      if (user) {
+        await loadAdminContent();
+      } else {
+        setIsLoadingContent(false);
+      }
     }
 
-    return sectionImages.slice(0, MAX_GALLERY_IMAGES_PER_SECTION);
-  });
-}
-
-export function AdminPanel() {
-  const [draft, setDraft] = useState<AdminDraft>(() => createInitialDraft());
-  const [statusMessage, setStatusMessage] = useState('');
+    checkUser();
+  }, []);
 
   const previewContent = useMemo(() => {
     return {
@@ -339,11 +376,11 @@ export function AdminPanel() {
     });
   }
 
-  function updateGalleryField(field: keyof AdminDraft['gallery'], value: string) {
+  function updateGalleryField(value: string) {
     setDraft((current) => {
       const galleryItems = cleanLines(value);
       const updatedImages = ensureGallerySectionSlots(
-        current.gallery.imagesDataUrlsBySection,
+        current.gallery.imagesUrlsBySection,
         galleryItems.length
       );
 
@@ -351,34 +388,37 @@ export function AdminPanel() {
         ...current,
         gallery: {
           ...current.gallery,
-          [field]: value,
-          imagesDataUrlsBySection: updatedImages,
+          itemsText: value,
+          imagesUrlsBySection: updatedImages,
         },
       };
     });
   }
 
-  function handleHeroImageUpload(event: ChangeEvent<HTMLInputElement>) {
+  async function handleHeroImageUpload(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
 
     if (!file) {
       return;
     }
 
-    const reader = new FileReader();
+    setStatusMessage('A carregar imagem principal...');
 
-    reader.onload = () => {
+    try {
+      const imageUrl = await uploadSiteImage(file, 'hero');
+
       setDraft((current) => ({
         ...current,
-        heroImageDataUrl: String(reader.result),
+        heroImageUrl: imageUrl,
       }));
-      setStatusMessage('Imagem principal carregada para pré-visualização.');
-    };
 
-    reader.readAsDataURL(file);
+      setStatusMessage('Imagem principal carregada. Não te esqueças de guardar alterações.');
+    } catch {
+      setStatusMessage('Erro ao carregar a imagem principal.');
+    }
   }
 
-  function handleGalleryImageUpload(
+  async function handleGalleryImageUpload(
     sectionIndex: number,
     imageIndex: number,
     event: ChangeEvent<HTMLInputElement>
@@ -389,43 +429,44 @@ export function AdminPanel() {
       return;
     }
 
-    const reader = new FileReader();
+    setStatusMessage('A carregar imagem da galeria...');
 
-    reader.onload = () => {
+    try {
+      const imageUrl = await uploadSiteImage(file, `gallery/section-${sectionIndex + 1}`);
+
       setDraft((current) => {
         const sectionCount = cleanLines(current.gallery.itemsText).length;
         const updatedSections = ensureGallerySectionSlots(
-          current.gallery.imagesDataUrlsBySection,
+          current.gallery.imagesUrlsBySection,
           sectionCount
         );
 
         const currentSection = [...(updatedSections[sectionIndex] || [])];
-        currentSection[imageIndex] = String(reader.result);
-        updatedSections[sectionIndex] = currentSection.slice(
-          0,
-          MAX_GALLERY_IMAGES_PER_SECTION
-        );
+        currentSection[imageIndex] = imageUrl;
+        updatedSections[sectionIndex] = currentSection
+          .filter(Boolean)
+          .slice(0, MAX_GALLERY_IMAGES_PER_SECTION);
 
         return {
           ...current,
           gallery: {
             ...current.gallery,
-            imagesDataUrlsBySection: updatedSections,
+            imagesUrlsBySection: updatedSections,
           },
         };
       });
 
-      setStatusMessage('Imagem da galeria carregada para pré-visualização.');
-    };
-
-    reader.readAsDataURL(file);
+      setStatusMessage('Imagem da galeria carregada. Não te esqueças de guardar alterações.');
+    } catch {
+      setStatusMessage('Erro ao carregar a imagem da galeria.');
+    }
   }
 
   function removeGalleryImage(sectionIndex: number, imageIndex: number) {
     setDraft((current) => {
       const sectionCount = cleanLines(current.gallery.itemsText).length;
       const updatedSections = ensureGallerySectionSlots(
-        current.gallery.imagesDataUrlsBySection,
+        current.gallery.imagesUrlsBySection,
         sectionCount
       );
 
@@ -438,73 +479,125 @@ export function AdminPanel() {
         ...current,
         gallery: {
           ...current.gallery,
-          imagesDataUrlsBySection: updatedSections,
+          imagesUrlsBySection: updatedSections,
         },
       };
     });
 
-    setStatusMessage('Imagem removida da galeria neste navegador.');
+    setStatusMessage('Imagem removida. Não te esqueças de guardar alterações.');
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     const galleryItems = cleanLines(draft.gallery.itemsText);
-    const galleryImagesDataUrlsBySection = ensureGallerySectionSlots(
-      draft.gallery.imagesDataUrlsBySection,
+    const galleryImagesUrlsBySection = ensureGallerySectionSlots(
+      draft.gallery.imagesUrlsBySection,
       galleryItems.length
     );
 
-    saveContentPatch({
-      hero: {
-        title: draft.hero.title,
-        subtitle: draft.hero.subtitle,
-        description: draft.hero.description,
-        highlights: cleanLines(draft.hero.highlightsText),
-        floatingCardTitle: draft.hero.floatingCardTitle,
-        floatingCardText: draft.hero.floatingCardText,
-      },
-      about: {
-        title: draft.about.title,
-        paragraphs: cleanParagraphs(draft.about.paragraphsText),
-      },
-      contact: {
-        phone: draft.contact.phone,
-        email: draft.contact.email,
-        location: draft.contact.location,
-        whatsappNumber: draft.contact.whatsappNumber,
-        whatsappMessage: draft.contact.whatsappMessage,
-      },
-      modelsSection: {
-        title: draft.modelsSection.title,
-        description: draft.modelsSection.description,
-      },
-      models: mergeItemsWithIcons(siteContent.models, draft.models),
-      benefitsSection: {
-        title: draft.benefitsSection.title,
-        description: draft.benefitsSection.description,
-      },
-      benefits: mergeItemsWithIcons(siteContent.benefits, draft.benefits),
-      faq: {
-        title: draft.faq.title,
-        description: draft.faq.description,
-        items: draft.faq.items,
-      },
-      gallery: {
-        items: galleryItems,
-      },
-      galleryImagesDataUrlsBySection,
-      galleryImagesDataUrls: [],
-      heroImageDataUrl: draft.heroImageDataUrl,
-    });
+    setIsSaving(true);
+    setStatusMessage('');
 
-    setStatusMessage('Alterações guardadas neste navegador. Atualiza a página pública para ver o resultado.');
+    try {
+      await saveSiteContentPatch({
+        hero: {
+          title: draft.hero.title,
+          subtitle: draft.hero.subtitle,
+          description: draft.hero.description,
+          highlights: cleanLines(draft.hero.highlightsText),
+          floatingCardTitle: draft.hero.floatingCardTitle,
+          floatingCardText: draft.hero.floatingCardText,
+        },
+        about: {
+          title: draft.about.title,
+          paragraphs: cleanParagraphs(draft.about.paragraphsText),
+        },
+        contact: {
+          phone: draft.contact.phone,
+          email: draft.contact.email,
+          location: draft.contact.location,
+          whatsappNumber: draft.contact.whatsappNumber,
+          whatsappMessage: draft.contact.whatsappMessage,
+        },
+        modelsSection: {
+          title: draft.modelsSection.title,
+          description: draft.modelsSection.description,
+        },
+        models: mergeItemsWithIcons(siteContent.models, draft.models),
+        benefitsSection: {
+          title: draft.benefitsSection.title,
+          description: draft.benefitsSection.description,
+        },
+        benefits: mergeItemsWithIcons(siteContent.benefits, draft.benefits),
+        faq: {
+          title: draft.faq.title,
+          description: draft.faq.description,
+          items: draft.faq.items,
+        },
+        gallery: {
+          items: galleryItems,
+        },
+        galleryImagesUrlsBySection,
+        heroImageUrl: draft.heroImageUrl,
+      });
+
+      setStatusMessage('Alterações guardadas no Supabase com sucesso.');
+    } catch {
+      setStatusMessage('Erro ao guardar alterações no Supabase.');
+    } finally {
+      setIsSaving(false);
+    }
   }
 
-  function handleReset() {
-    resetContentPatch();
-    setDraft(createInitialDraft());
-    setStatusMessage('Conteúdo reposto para a versão original do código.');
+  async function handleReset() {
+    const confirmReset = window.confirm(
+      'Tens a certeza que queres repor o conteúdo base? Esta ação vai guardar a versão base no Supabase.'
+    );
+
+    if (!confirmReset) {
+      return;
+    }
+
+    setIsSaving(true);
+
+    try {
+      await saveSiteContentPatch({});
+      setDraft(createDraftFromPatch({}));
+      setStatusMessage('Conteúdo reposto para a versão base.');
+    } catch {
+      setStatusMessage('Erro ao repor o conteúdo.');
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  async function handleLogout() {
+    await signOutAdmin();
+    setIsAuthenticated(false);
+  }
+
+  if (isCheckingAuth || isLoadingContent) {
+    return (
+      <div className="admin-login-page">
+        <div className="admin-login-card">
+          <span className="admin-kicker">Área administrativa</span>
+          <h1>A carregar...</h1>
+          <p>A verificar sessão e conteúdo do website.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <AdminLogin
+        onLoginSuccess={async () => {
+          setIsAuthenticated(true);
+          await loadAdminContent();
+        }}
+      />
+    );
   }
 
   return (
@@ -514,8 +607,8 @@ export function AdminPanel() {
           <span className="admin-kicker">Área administrativa</span>
           <h1>Casas do Centro</h1>
           <p>
-            Painel piloto para editar textos principais, imagens, modelos,
-            vantagens, FAQ e contactos.
+            Painel para editar textos principais, imagens, modelos, vantagens,
+            FAQ e contactos.
           </p>
         </div>
 
@@ -530,21 +623,33 @@ export function AdminPanel() {
           <a href="#contactos">Contactos</a>
         </nav>
 
-        <a className="admin-back-link" href="/">
-          <ArrowLeft size={18} />
-          Voltar ao site
-        </a>
+        <div className="admin-sidebar-actions">
+          <a className="admin-back-link" href="/">
+            <ArrowLeft size={18} />
+            Voltar ao site
+          </a>
+
+          <button type="button" className="admin-logout-button" onClick={handleLogout}>
+            <LogOut size={18} />
+            Sair
+          </button>
+        </div>
       </aside>
 
       <main className="admin-main">
         <div className="admin-topbar">
           <div>
-            <span className="admin-kicker">Piloto sem base de dados</span>
+            <span className="admin-kicker">Ligado ao Supabase</span>
             <h2>Editar conteúdo do website</h2>
           </div>
 
           <div className="admin-topbar-actions">
-            <button type="button" className="admin-secondary-button" onClick={handleReset}>
+            <button
+              type="button"
+              className="admin-secondary-button"
+              onClick={handleReset}
+              disabled={isSaving}
+            >
               <RotateCcw size={18} />
               Repor
             </button>
@@ -627,21 +732,21 @@ export function AdminPanel() {
                 <ImagePlus size={22} />
                 <div>
                   <h3>Imagem principal</h3>
-                  <p>Upload de teste para substituir a imagem da homepage neste navegador.</p>
+                  <p>Upload real para substituir a imagem da homepage.</p>
                 </div>
               </div>
 
               <label className="admin-upload">
                 <ImagePlus size={26} />
                 <span>Escolher imagem</span>
-                <small>Formato recomendado: JPG ou JPEG, horizontal.</small>
+                <small>Formato recomendado: JPG, PNG ou WEBP horizontal.</small>
                 <input type="file" accept="image/*" onChange={handleHeroImageUpload} />
               </label>
 
-              {draft.heroImageDataUrl && (
+              {draft.heroImageUrl && (
                 <img
                   className="admin-upload-preview"
-                  src={draft.heroImageDataUrl}
+                  src={draft.heroImageUrl}
                   alt="Pré-visualização da imagem principal"
                 />
               )}
@@ -784,9 +889,7 @@ export function AdminPanel() {
                 <Images size={22} />
                 <div>
                   <h3>Galeria</h3>
-                  <p>
-                    Edita as sessões da galeria e adiciona até 5 fotos por sessão.
-                  </p>
+                  <p>Edita as sessões da galeria e adiciona até 5 fotos por sessão.</p>
                 </div>
               </div>
 
@@ -796,14 +899,13 @@ export function AdminPanel() {
                 <textarea
                   rows={6}
                   value={draft.gallery.itemsText}
-                  onChange={(event) => updateGalleryField('itemsText', event.target.value)}
+                  onChange={(event) => updateGalleryField(event.target.value)}
                 />
               </label>
 
               <div className="admin-gallery-sections">
                 {previewContent.galleryItems.map((item, sectionIndex) => {
-                  const sectionImages =
-                    draft.gallery.imagesDataUrlsBySection[sectionIndex] || [];
+                  const sectionImages = draft.gallery.imagesUrlsBySection[sectionIndex] || [];
 
                   return (
                     <div className="admin-gallery-section" key={`${item}-${sectionIndex}`}>
@@ -827,10 +929,7 @@ export function AdminPanel() {
                                 key={`${item}-${sectionIndex}-${imageIndex}`}
                               >
                                 {image ? (
-                                  <img
-                                    src={image}
-                                    alt={`${item} ${imageIndex + 1}`}
-                                  />
+                                  <img src={image} alt={`${item} ${imageIndex + 1}`} />
                                 ) : (
                                   <div className="admin-gallery-placeholder">
                                     <Images size={22} />
@@ -978,9 +1077,9 @@ export function AdminPanel() {
             </div>
 
             <div className="admin-save-bar">
-              <button type="submit" className="admin-save-button">
+              <button type="submit" className="admin-save-button" disabled={isSaving}>
                 <Save size={20} />
-                Guardar alterações
+                {isSaving ? 'A guardar...' : 'Guardar alterações'}
               </button>
             </div>
           </section>
@@ -1033,7 +1132,7 @@ export function AdminPanel() {
               <div className="admin-preview-tags">
                 {previewContent.galleryItems.map((item, index) => {
                   const imageCount =
-                    draft.gallery.imagesDataUrlsBySection[index]?.filter(Boolean).length || 0;
+                    draft.gallery.imagesUrlsBySection[index]?.filter(Boolean).length || 0;
 
                   return (
                     <span key={item}>
@@ -1057,9 +1156,8 @@ export function AdminPanel() {
             <div className="admin-note">
               <strong>Nota importante:</strong>
               <p>
-                Nesta fase, as alterações ficam guardadas apenas no navegador atual.
-                Na próxima etapa, vamos ligar isto a uma base de dados para a cliente
-                conseguir editar o site real.
+                As alterações só ficam públicas depois de carregar em “Guardar alterações”.
+                As imagens são enviadas para o Supabase Storage.
               </p>
             </div>
           </aside>

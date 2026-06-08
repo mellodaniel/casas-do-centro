@@ -564,3 +564,105 @@
     padding: 20px;
   }
 }
+.admin-login-page {
+  min-height: 100vh;
+  background:
+    linear-gradient(120deg, rgba(248, 243, 234, 0.96), rgba(255, 255, 255, 0.9)),
+    radial-gradient(circle at top right, rgba(67, 165, 47, 0.18), transparent 36%),
+    radial-gradient(circle at bottom left, rgba(122, 72, 0, 0.16), transparent 32%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.admin-login-card {
+  width: min(100%, 440px);
+  background: #ffffff;
+  border: 1px solid rgba(122, 72, 0, 0.12);
+  border-radius: 28px;
+  padding: 30px;
+  box-shadow: 0 18px 48px rgba(77, 46, 0, 0.12);
+}
+
+.admin-login-card h1 {
+  margin: 0 0 12px;
+  color: #4d2e00;
+  font-size: 2.4rem;
+  letter-spacing: -0.055em;
+  line-height: 1;
+}
+
+.admin-login-card p {
+  color: #666666;
+  line-height: 1.6;
+  margin: 0 0 22px;
+}
+
+.admin-login-card label {
+  display: grid;
+  gap: 8px;
+  color: #4d2e00;
+  font-weight: 900;
+  margin-bottom: 16px;
+}
+
+.admin-login-card input {
+  width: 100%;
+  border: 1px solid rgba(122, 72, 0, 0.18);
+  background: #fffaf2;
+  border-radius: 15px;
+  padding: 14px 15px;
+  outline: none;
+  color: #242424;
+}
+
+.admin-login-card input:focus {
+  border-color: #43a52f;
+  box-shadow: 0 0 0 4px rgba(67, 165, 47, 0.12);
+}
+
+.admin-login-icon {
+  width: 62px;
+  height: 62px;
+  border-radius: 20px;
+  background: #e8f5e4;
+  color: #2f7d22;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 18px;
+}
+
+.admin-login-back {
+  display: block;
+  margin-top: 18px;
+  text-align: center;
+  color: #7a4800;
+  font-weight: 900;
+}
+
+.admin-sidebar-actions {
+  display: grid;
+  gap: 10px;
+}
+
+.admin-logout-button {
+  color: rgba(255, 255, 255, 0.92);
+  background: rgba(255, 255, 255, 0.08);
+  padding: 11px 13px;
+  border-radius: 14px;
+  font-weight: 850;
+  text-decoration: none;
+  font-size: 0.92rem;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  transition: 0.2s ease;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.admin-logout-button:hover {
+  background: rgba(255, 255, 255, 0.14);
+}

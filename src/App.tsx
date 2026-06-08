@@ -10,15 +10,31 @@ import {
   CheckCircle,
   HelpCircle,
 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import './index.css';
 import logo from './assets/logo.png';
 import heroImage from './assets/hero-casa-madeira.jpeg';
 import { siteContent } from './data/siteContent';
-import { loadContentPatch, loadSiteContent } from './lib/contentStorage';
 import { AdminPanel } from './admin/AdminPanel';
+import {
+  buildSiteContent,
+  getSiteContentPatch,
+  type ContentPatch,
+} from './lib/siteContentService';
 
-function normalizeGalleryImagesBySection(patch: Record<string, any>, sectionCount: number) {
+function normalizeGalleryImagesBySection(patch: ContentPatch, sectionCount: number) {
+  if (Array.isArray(patch.galleryImagesUrlsBySection)) {
+    return Array.from({ length: sectionCount }, (_, sectionIndex) => {
+      const sectionImages = patch.galleryImagesUrlsBySection[sectionIndex];
+
+      if (!Array.isArray(sectionImages)) {
+        return [];
+      }
+
+      return sectionImages.filter(Boolean).slice(0, 5);
+    });
+  }
+
   if (Array.isArray(patch.galleryImagesDataUrlsBySection)) {
     return Array.from({ length: sectionCount }, (_, sectionIndex) => {
       const sectionImages = patch.galleryImagesDataUrlsBySection[sectionIndex];
@@ -31,32 +47,36 @@ function normalizeGalleryImagesBySection(patch: Record<string, any>, sectionCoun
     });
   }
 
-  if (Array.isArray(patch.galleryImagesDataUrls)) {
-    return Array.from({ length: sectionCount }, (_, sectionIndex) => {
-      const legacyImage = patch.galleryImagesDataUrls[sectionIndex];
-
-      if (!legacyImage) {
-        return [];
-      }
-
-      return [legacyImage];
-    });
-  }
-
   return Array.from({ length: sectionCount }, () => []);
 }
 
 function App() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [contentPatch, setContentPatch] = useState<ContentPatch>({});
 
   const isAdminPage = window.location.pathname === '/admin';
 
-  const content = useMemo(() => loadSiteContent(siteContent), []);
-  const patch = useMemo(() => loadContentPatch(), []);
+  useEffect(() => {
+    if (isAdminPage) {
+      return;
+    }
+
+    async function loadContent() {
+      const patch = await getSiteContentPatch();
+      setContentPatch(patch);
+    }
+
+    loadContent();
+  }, [isAdminPage]);
+
+  const content = useMemo(
+    () => buildSiteContent(siteContent, contentPatch),
+    [contentPatch]
+  );
 
   const galleryImagesBySection = useMemo(
-    () => normalizeGalleryImagesBySection(patch, content.gallery.items.length),
-    [patch, content.gallery.items.length]
+    () => normalizeGalleryImagesBySection(contentPatch, content.gallery.items.length),
+    [contentPatch, content.gallery.items.length]
   );
 
   const whatsappMessage = encodeURIComponent(content.contact.whatsappMessage);
@@ -129,7 +149,7 @@ function App() {
             <div className="hero-visual">
               <div className="hero-image-card real-image-card">
                 <img
-                  src={content.heroImageDataUrl || heroImage}
+                  src={content.heroImageUrl || heroImage}
                   alt={content.hero.imageAlt}
                   className="hero-main-image"
                 />
