@@ -20,6 +20,7 @@ import {
 import { useState } from 'react';
 import './index.css';
 import logo from './assets/logo.png';
+import heroImage from './assets/hero-casa-madeira.jpg';
 
 function App() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -178,12 +179,12 @@ function App() {
             </div>
 
             <div className="hero-visual">
-              <div className="hero-image-card">
-                <div className="image-placeholder main-placeholder">
-                  <Home size={70} />
-                  <strong>Imagem principal</strong>
-                  <small>Casa de madeira em ambiente natural</small>
-                </div>
+              <div className="hero-image-card real-image-card">
+                <img
+                  src={heroImage}
+                  alt="Casa de madeira em ambiente natural"
+                  className="hero-main-image"
+                />
 
                 <div className="floating-card">
                   <Leaf size={24} />
