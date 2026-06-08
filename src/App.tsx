@@ -15,7 +15,7 @@ import './index.css';
 import logo from './assets/logo.png';
 import heroImage from './assets/hero-casa-madeira.jpeg';
 import { siteContent } from './data/siteContent';
-import { loadSiteContent } from './lib/contentStorage';
+import { loadContentPatch, loadSiteContent } from './lib/contentStorage';
 import { AdminPanel } from './admin/AdminPanel';
 
 function App() {
@@ -24,6 +24,11 @@ function App() {
   const isAdminPage = window.location.pathname === '/admin';
 
   const content = useMemo(() => loadSiteContent(siteContent), []);
+  const patch = useMemo(() => loadContentPatch(), []);
+
+  const galleryImagesDataUrls = Array.isArray(patch.galleryImagesDataUrls)
+    ? patch.galleryImagesDataUrls
+    : [];
 
   const whatsappMessage = encodeURIComponent(content.contact.whatsappMessage);
 
@@ -224,17 +229,28 @@ function App() {
             </div>
 
             <div className="gallery-grid">
-              {content.gallery.items.map((item, index) => (
-                <div
-                  className={`gallery-item ${index === 0 ? 'large' : ''} ${
-                    index === content.gallery.items.length - 1 ? 'wide' : ''
-                  }`}
-                  key={item}
-                >
-                  <Images size={index === 0 ? 34 : 30} />
-                  <strong>{item}</strong>
-                </div>
-              ))}
+              {content.gallery.items.map((item, index) => {
+                const image = galleryImagesDataUrls[index];
+
+                return (
+                  <div
+                    className={`gallery-item ${index === 0 ? 'large' : ''} ${
+                      index === content.gallery.items.length - 1 ? 'wide' : ''
+                    } ${image ? 'has-gallery-image' : ''}`}
+                    key={`${item}-${index}`}
+                    style={
+                      image
+                        ? {
+                            backgroundImage: `linear-gradient(180deg, rgba(0, 0, 0, 0.08), rgba(77, 46, 0, 0.7)), url(${image})`,
+                          }
+                        : undefined
+                    }
+                  >
+                    {!image && <Images size={index === 0 ? 34 : 30} />}
+                    <strong>{item}</strong>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </section>

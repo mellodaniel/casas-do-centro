@@ -8,6 +8,7 @@ import {
   Type,
   Phone,
   Building,
+  Images,
 } from 'lucide-react';
 import { siteContent } from '../data/siteContent';
 import {
@@ -38,6 +39,10 @@ type AdminDraft = {
     whatsappNumber: string;
     whatsappMessage: string;
   };
+  gallery: {
+    itemsText: string;
+    imagesDataUrls: string[];
+  };
   heroImageDataUrl: string;
 };
 
@@ -64,6 +69,12 @@ function createInitialDraft(): AdminDraft {
       location: content.contact.location,
       whatsappNumber: content.contact.whatsappNumber,
       whatsappMessage: content.contact.whatsappMessage,
+    },
+    gallery: {
+      itemsText: content.gallery.items.join('\n'),
+      imagesDataUrls: Array.isArray(patch.galleryImagesDataUrls)
+        ? patch.galleryImagesDataUrls
+        : [],
     },
     heroImageDataUrl: patch.heroImageDataUrl || '',
   };
@@ -95,6 +106,7 @@ export function AdminPanel() {
       highlights: cleanLines(draft.hero.highlightsText),
       aboutTitle: draft.about.title,
       aboutParagraphs: cleanParagraphs(draft.about.paragraphsText),
+      galleryItems: cleanLines(draft.gallery.itemsText),
     };
   }, [draft]);
 
@@ -128,7 +140,17 @@ export function AdminPanel() {
     }));
   }
 
-  function handleImageUpload(event: ChangeEvent<HTMLInputElement>) {
+  function updateGalleryField(field: keyof AdminDraft['gallery'], value: string) {
+    setDraft((current) => ({
+      ...current,
+      gallery: {
+        ...current.gallery,
+        [field]: value,
+      },
+    }));
+  }
+
+  function handleHeroImageUpload(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
 
     if (!file) {
@@ -142,14 +164,62 @@ export function AdminPanel() {
         ...current,
         heroImageDataUrl: String(reader.result),
       }));
-      setStatusMessage('Imagem carregada para pré-visualização.');
+      setStatusMessage('Imagem principal carregada para pré-visualização.');
     };
 
     reader.readAsDataURL(file);
   }
 
+  function handleGalleryImageUpload(index: number, event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      setDraft((current) => {
+        const updatedImages = [...current.gallery.imagesDataUrls];
+        updatedImages[index] = String(reader.result);
+
+        return {
+          ...current,
+          gallery: {
+            ...current.gallery,
+            imagesDataUrls: updatedImages,
+          },
+        };
+      });
+
+      setStatusMessage('Imagem da galeria carregada para pré-visualização.');
+    };
+
+    reader.readAsDataURL(file);
+  }
+
+  function removeGalleryImage(index: number) {
+    setDraft((current) => {
+      const updatedImages = [...current.gallery.imagesDataUrls];
+      updatedImages[index] = '';
+
+      return {
+        ...current,
+        gallery: {
+          ...current.gallery,
+          imagesDataUrls: updatedImages,
+        },
+      };
+    });
+
+    setStatusMessage('Imagem removida da galeria neste navegador.');
+  }
+
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    const galleryItems = cleanLines(draft.gallery.itemsText);
 
     saveContentPatch({
       hero: {
@@ -171,6 +241,10 @@ export function AdminPanel() {
         whatsappNumber: draft.contact.whatsappNumber,
         whatsappMessage: draft.contact.whatsappMessage,
       },
+      gallery: {
+        items: galleryItems,
+      },
+      galleryImagesDataUrls: draft.gallery.imagesDataUrls,
       heroImageDataUrl: draft.heroImageDataUrl,
     });
 
@@ -190,7 +264,7 @@ export function AdminPanel() {
           <span className="admin-kicker">Área administrativa</span>
           <h1>Casas do Centro</h1>
           <p>
-            Painel piloto para editar textos principais e testar uploads de imagem.
+            Painel piloto para editar textos principais, contactos e imagens do website.
           </p>
         </div>
 
@@ -199,6 +273,7 @@ export function AdminPanel() {
           <a href="#sobre">Sobre nós</a>
           <a href="#contactos">Contactos</a>
           <a href="#imagem">Imagem principal</a>
+          <a href="#galeria">Galeria</a>
         </nav>
 
         <a className="admin-back-link" href="/">
@@ -387,7 +462,7 @@ export function AdminPanel() {
                 <ImagePlus size={26} />
                 <span>Escolher imagem</span>
                 <small>Formato recomendado: JPG ou JPEG, horizontal.</small>
-                <input type="file" accept="image/*" onChange={handleImageUpload} />
+                <input type="file" accept="image/*" onChange={handleHeroImageUpload} />
               </label>
 
               {draft.heroImageDataUrl && (
@@ -397,6 +472,69 @@ export function AdminPanel() {
                   alt="Pré-visualização da imagem principal"
                 />
               )}
+            </div>
+
+            <div id="galeria" className="admin-card">
+              <div className="admin-card-heading">
+                <Images size={22} />
+                <div>
+                  <h3>Galeria</h3>
+                  <p>Editar nomes e imagens dos blocos da galeria do website.</p>
+                </div>
+              </div>
+
+              <label>
+                Nomes dos blocos da galeria
+                <small>Coloca um nome por linha. A ordem aqui será a ordem no site.</small>
+                <textarea
+                  rows={6}
+                  value={draft.gallery.itemsText}
+                  onChange={(event) => updateGalleryField('itemsText', event.target.value)}
+                />
+              </label>
+
+              <div className="admin-gallery-editor">
+                {previewContent.galleryItems.map((item, index) => (
+                  <div className="admin-gallery-card" key={`${item}-${index}`}>
+                    <div>
+                      <strong>{item}</strong>
+                      <small>Imagem {index + 1}</small>
+                    </div>
+
+                    {draft.gallery.imagesDataUrls[index] ? (
+                      <img
+                        src={draft.gallery.imagesDataUrls[index]}
+                        alt={`Imagem da galeria ${item}`}
+                      />
+                    ) : (
+                      <div className="admin-gallery-placeholder">
+                        <Images size={26} />
+                        <span>Sem imagem</span>
+                      </div>
+                    )}
+
+                    <label className="admin-gallery-upload">
+                      <ImagePlus size={18} />
+                      Escolher imagem
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(event) => handleGalleryImageUpload(index, event)}
+                      />
+                    </label>
+
+                    {draft.gallery.imagesDataUrls[index] && (
+                      <button
+                        type="button"
+                        className="admin-remove-image"
+                        onClick={() => removeGalleryImage(index)}
+                      >
+                        Remover imagem
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
 
             <div className="admin-save-bar">
@@ -427,6 +565,16 @@ export function AdminPanel() {
               {previewContent.aboutParagraphs.slice(0, 2).map((paragraph) => (
                 <p key={paragraph}>{paragraph}</p>
               ))}
+            </div>
+
+            <div className="admin-preview-card small">
+              <span className="admin-kicker">Galeria</span>
+              <h3>Blocos configurados</h3>
+              <div className="admin-preview-tags">
+                {previewContent.galleryItems.map((item) => (
+                  <span key={item}>{item}</span>
+                ))}
+              </div>
             </div>
 
             <div className="admin-note">
