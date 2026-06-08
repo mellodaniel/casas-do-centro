@@ -46,7 +46,7 @@ function App() {
     {
       icon: <Building2 />,
       title: 'Turismo rural',
-      text: 'Projetos ideais para alojamento local, turismo rural, glamping e investimento em experiências diferenciadas.',
+      text: 'Projetos indicados para alojamento local, turismo rural, glamping e investimento em experiências diferenciadas.',
     },
     {
       icon: <Hammer />,
@@ -59,17 +59,17 @@ function App() {
     {
       icon: <Trees />,
       title: 'Integração com a natureza',
-      text: 'A madeira cria ambientes acolhedores e combina naturalmente com espaços verdes e terrenos rurais.',
+      text: 'A madeira cria ambientes acolhedores e combina naturalmente com espaços verdes, terrenos rurais e zonas de lazer.',
     },
     {
       icon: <Clock />,
       title: 'Construção eficiente',
-      text: 'Processos mais organizados e soluções pensadas para reduzir complexidade na execução do projeto.',
+      text: 'Os modelos de fábrica permitem processos mais organizados e soluções pensadas para facilitar a execução do projeto.',
     },
     {
       icon: <Leaf />,
       title: 'Sustentabilidade',
-      text: 'Uma solução com forte ligação ao ambiente, ideal para quem procura uma construção mais natural.',
+      text: 'Uma solução com forte ligação ao ambiente, ideal para quem procura uma construção mais natural e acolhedora.',
     },
     {
       icon: <ShieldCheck />,
@@ -79,12 +79,12 @@ function App() {
     {
       icon: <BadgeEuro />,
       title: 'Solução ajustável',
-      text: 'Cada projeto pode ser pensado de acordo com a finalidade, área, orçamento e necessidades do cliente.',
+      text: 'As opções podem ser avaliadas de acordo com a finalidade, área pretendida e disponibilidade da fábrica.',
     },
     {
       icon: <CheckCircle />,
-      title: 'Projeto personalizado',
-      text: 'Do conceito à execução, a casa pode ser adaptada ao estilo de vida e objetivo de cada cliente.',
+      title: 'Modelos com opções',
+      text: 'As casas partem de modelos definidos, podendo existir ajustes de tipologia e áreas conforme disponibilidade.',
     },
   ];
 
@@ -106,19 +106,24 @@ function App() {
         'Na maioria dos casos, sim. Em Portugal, uma casa destinada a habitação ou utilização permanente normalmente deve cumprir regras urbanísticas e procedimentos junto da Câmara Municipal. Cada caso deve ser analisado de acordo com o terreno e finalidade do projeto.',
     },
     {
-      question: 'É possível personalizar o projeto?',
+      question: 'As casas são totalmente feitas à medida?',
       answer:
-        'Sim. O objetivo é desenvolver soluções adaptadas à necessidade de cada cliente, considerando área, finalidade, estilo, orçamento e características do terreno.',
+        'Por norma, as casas partem de modelos definidos pela fábrica. Podem existir alterações de tipologia, áreas e algumas características, mas tudo depende da disponibilidade da fábrica. Projetos muito específicos ou exclusivos podem ter impacto no valor final.',
+    },
+    {
+      question: 'É possível alterar áreas ou tipologias?',
+      answer:
+        'Sim, em alguns casos é possível avaliar alterações nas áreas, divisões ou tipologia da casa. No entanto, essas alterações dependem sempre da viabilidade técnica e da disponibilidade da fábrica.',
     },
     {
       question: 'As casas podem ser usadas para habitação permanente?',
       answer:
-        'Sim. As casas de madeira podem ser pensadas para habitação permanente, casas de férias, turismo rural, alojamento local ou outros fins, desde que o projeto seja adequado à finalidade pretendida.',
+        'Sim. As casas de madeira podem ser pensadas para habitação permanente, casas de férias, turismo rural, alojamento local ou outros fins, desde que o projeto seja adequado à finalidade pretendida e cumpra os requisitos aplicáveis.',
     },
     {
       question: 'O orçamento é personalizado?',
       answer:
-        'Sim. Nesta fase, o orçamento deve ser preparado de acordo com o tipo de casa, área aproximada, localização, acabamentos pretendidos e nível de personalização.',
+        'Sim. O orçamento deve ser preparado de acordo com o modelo escolhido, área aproximada, localização, acabamentos, alterações pretendidas e disponibilidade da fábrica.',
     },
   ];
 
@@ -158,12 +163,13 @@ function App() {
 
               <h1>A sua casa de madeira começa aqui.</h1>
 
-              <h2>Natural, confortável e feita à medida em Portugal.</h2>
+              <h2>Natural, confortável e adaptada ao seu projeto em Portugal.</h2>
 
               <p>
-                Na <strong>Casas do Centro - Casas de Madeira</strong>, criamos soluções
-                em madeira para habitação, lazer, turismo rural e projetos personalizados,
-                com foco em conforto, qualidade e integração com a natureza.
+                Na <strong>Casas do Centro - Casas de Madeira</strong>, apresentamos soluções
+                em madeira para habitação, lazer, turismo rural e investimento. As casas partem
+                de modelos definidos pela fábrica, com possibilidade de ajustes de tipologia
+                e áreas conforme disponibilidade.
               </p>
 
               <div className="hero-actions">
@@ -172,9 +178,9 @@ function App() {
               </div>
 
               <div className="hero-highlights">
-                <span><CheckCircle size={18} /> Projetos personalizados</span>
+                <span><CheckCircle size={18} /> Modelos de fábrica</span>
                 <span><CheckCircle size={18} /> Portugal Continental - Zona Centro</span>
-                <span><CheckCircle size={18} /> Soluções em madeira</span>
+                <span><CheckCircle size={18} /> Ajustes conforme disponibilidade</span>
               </div>
             </div>
 
@@ -190,7 +196,7 @@ function App() {
                   <Leaf size={24} />
                   <div>
                     <strong>Conforto natural</strong>
-                    <span>Projetos integrados com a natureza</span>
+                    <span>Soluções integradas com a natureza</span>
                   </div>
                 </div>
               </div>
@@ -202,21 +208,22 @@ function App() {
           <div className="container two-columns">
             <div>
               <span className="section-label">Sobre nós</span>
-              <h2>Construímos casas de madeira com qualidade, proximidade e confiança.</h2>
+              <h2>Casas de madeira com qualidade, proximidade e confiança.</h2>
             </div>
 
             <div className="text-block">
               <p>
                 A <strong>Casas do Centro - Casas de Madeira</strong> nasce com o objetivo
-                de oferecer soluções em madeira adaptadas às necessidades de cada cliente.
+                de apresentar soluções em madeira adaptadas a diferentes necessidades, desde
+                habitação até lazer, turismo rural e investimento.
               </p>
               <p>
-                Acompanhamos cada etapa do processo, desde a ideia inicial até à concretização
-                do projeto, procurando unir estética, resistência, conforto e sustentabilidade.
+                Trabalhamos com modelos definidos pela fábrica, podendo avaliar alterações
+                de tipologia, áreas e características de acordo com a disponibilidade existente.
               </p>
               <p>
-                Este website está em fase piloto e será atualizado com informações oficiais,
-                fotografias reais, contactos e detalhes comerciais da empresa.
+                O nosso objetivo é acompanhar cada cliente desde a ideia inicial até à proposta,
+                procurando unir estética, conforto, funcionalidade e integração com a natureza.
               </p>
             </div>
           </div>
@@ -228,8 +235,8 @@ function App() {
               <span className="section-label">Modelos</span>
               <h2>Soluções em madeira para diferentes estilos de vida.</h2>
               <p>
-                Cada projeto é pensado de acordo com o espaço, objetivo e estilo de vida
-                de cada cliente.
+                Cada solução pode ser avaliada de acordo com o espaço, objetivo, finalidade
+                e opções disponíveis em fábrica.
               </p>
             </div>
 
@@ -294,16 +301,16 @@ function App() {
           <div className="container">
             <div className="section-heading">
               <span className="section-label light">Processo</span>
-              <h2>Da ideia à construção da sua casa de madeira.</h2>
+              <h2>Da ideia à proposta da sua casa de madeira.</h2>
             </div>
 
             <div className="process-grid">
               {[
                 ['1', 'Primeiro contacto', 'Falamos consigo para perceber a sua ideia, objetivo e localização.'],
                 ['2', 'Análise', 'Avaliamos tipo de casa, área, finalidade e características pretendidas.'],
-                ['3', 'Proposta', 'Preparamos uma solução ajustada ao projeto e às necessidades.'],
-                ['4', 'Planeamento', 'Organizamos os próximos passos para transformar a ideia num projeto.'],
-                ['5', 'Construção', 'Avançamos com a execução, acompanhamento e atenção ao detalhe.'],
+                ['3', 'Modelos disponíveis', 'Verificamos as soluções existentes e as possibilidades de ajuste em fábrica.'],
+                ['4', 'Proposta', 'Preparamos uma solução ajustada ao projeto, considerando modelo, área e alterações possíveis.'],
+                ['5', 'Seguimento', 'Acompanhamos os próximos passos para avançar com o projeto de forma clara e organizada.'],
               ].map(([number, title, text]) => (
                 <div className="process-card" key={number}>
                   <span>{number}</span>
@@ -382,8 +389,8 @@ function App() {
               <span className="section-label">Contacto</span>
               <h2>Pronto para começar o seu projeto?</h2>
               <p>
-                Fale connosco e dê o primeiro passo para criar uma casa de madeira
-                natural, confortável e feita à medida.
+                Fale connosco e dê o primeiro passo para avaliar a solução de madeira
+                mais adequada ao seu objetivo.
               </p>
 
               <div className="contact-info">
@@ -418,7 +425,7 @@ function App() {
                 <option>Casa de férias</option>
                 <option>Turismo rural / alojamento local</option>
                 <option>Bungalow ou anexo</option>
-                <option>Projeto personalizado</option>
+                <option>Projeto com ajustes</option>
               </select>
 
               <select defaultValue="">
@@ -435,8 +442,8 @@ function App() {
               <button type="submit">Enviar pedido de orçamento</button>
 
               <small>
-                Dados fictícios para versão piloto. Contactos e formulário serão ajustados
-                quando forem enviados os dados oficiais.
+                Dados fictícios para versão piloto. Contactos, formulário e informações
+                comerciais serão ajustados quando forem enviados os dados oficiais.
               </small>
             </form>
           </div>
@@ -446,7 +453,7 @@ function App() {
       <footer className="footer">
         <div className="container footer-content">
           <img src={logo} alt="Casas do Centro - Casas de Madeira" />
-          <p>Casas de madeira feitas à medida em Portugal.</p>
+          <p>Casas de madeira em Portugal, com modelos e soluções adaptáveis ao seu projeto.</p>
           <div className="footer-links">
             <a href="#inicio">Início</a>
             <a href="#modelos">Modelos</a>
