@@ -186,6 +186,7 @@ function App() {
               <div className="hero-highlights">
                 <span><CheckCircle size={18} /> Casas certificadas</span>
                 <span><CheckCircle size={18} /> Ecológicas e sustentáveis</span>
+                <span><CheckCircle size={18} /> Portugal Continental - Zona Centro</span>
                 <span><CheckCircle size={18} /> Ajustes conforme disponibilidade</span>
               </div>
             </div>
