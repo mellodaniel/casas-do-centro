@@ -12,10 +12,10 @@ import {
   CheckCircle,
   Trees,
   Building2,
-  BadgeEuro,
   Clock,
   ShieldCheck,
   HelpCircle,
+  Award,
 } from 'lucide-react';
 import { useState } from 'react';
 import './index.css';
@@ -57,19 +57,19 @@ function App() {
 
   const benefits = [
     {
-      icon: <Trees />,
-      title: 'Integração com a natureza',
-      text: 'A madeira cria ambientes acolhedores e combina naturalmente com espaços verdes, terrenos rurais e zonas de lazer.',
-    },
-    {
-      icon: <Clock />,
-      title: 'Construção eficiente',
-      text: 'Os modelos de fábrica permitem processos mais organizados e soluções pensadas para facilitar a execução do projeto.',
+      icon: <Award />,
+      title: 'Casas certificadas',
+      text: 'Soluções desenvolvidas com materiais de qualidade e certificações adequadas, conforme os modelos e fornecedores disponíveis.',
     },
     {
       icon: <Leaf />,
-      title: 'Sustentabilidade',
-      text: 'Uma solução com forte ligação ao ambiente, ideal para quem procura uma construção mais natural e acolhedora.',
+      title: 'Ecológicas e sustentáveis',
+      text: 'Uma escolha indicada para quem procura conforto, eficiência e uma construção com maior ligação à natureza.',
+    },
+    {
+      icon: <Trees />,
+      title: 'Integração com a natureza',
+      text: 'A madeira cria ambientes acolhedores e combina naturalmente com espaços verdes, terrenos rurais e zonas de lazer.',
     },
     {
       icon: <ShieldCheck />,
@@ -77,9 +77,9 @@ function App() {
       text: 'Projetos pensados para oferecer bem-estar, qualidade construtiva e utilização durante todo o ano.',
     },
     {
-      icon: <BadgeEuro />,
-      title: 'Solução ajustável',
-      text: 'As opções podem ser avaliadas de acordo com a finalidade, área pretendida e disponibilidade da fábrica.',
+      icon: <Clock />,
+      title: 'Construção eficiente',
+      text: 'Os modelos de fábrica permitem processos mais organizados e soluções pensadas para facilitar a execução do projeto.',
     },
     {
       icon: <CheckCircle />,
@@ -114,6 +114,11 @@ function App() {
       question: 'É possível alterar áreas ou tipologias?',
       answer:
         'Sim, em alguns casos é possível avaliar alterações nas áreas, divisões ou tipologia da casa. No entanto, essas alterações dependem sempre da viabilidade técnica e da disponibilidade da fábrica.',
+    },
+    {
+      question: 'As casas são certificadas e ecológicas?',
+      answer:
+        'As soluções apresentadas privilegiam materiais de qualidade, conforto e sustentabilidade. A certificação e as características técnicas devem ser confirmadas de acordo com o modelo escolhido, os materiais aplicados e a disponibilidade da fábrica.',
     },
     {
       question: 'As casas podem ser usadas para habitação permanente?',
@@ -166,10 +171,11 @@ function App() {
               <h2>Natural, confortável e adaptada ao seu projeto em Portugal.</h2>
 
               <p>
-                Na <strong>Casas do Centro - Casas de Madeira</strong>, apresentamos soluções
-                em madeira para habitação, lazer, turismo rural e investimento. As casas partem
-                de modelos definidos pela fábrica, com possibilidade de ajustes de tipologia
-                e áreas conforme disponibilidade.
+                Na <strong>Casas do Centro - Casas de Madeira</strong>, apresentamos casas
+                de madeira certificadas e ecológicas, pensadas para quem procura sustentabilidade,
+                conforto, design inovador e materiais de alta qualidade. As casas partem de
+                modelos definidos pela fábrica, com possibilidade de ajustes de tipologia e áreas
+                conforme disponibilidade.
               </p>
 
               <div className="hero-actions">
@@ -178,8 +184,8 @@ function App() {
               </div>
 
               <div className="hero-highlights">
-                <span><CheckCircle size={18} /> Modelos de fábrica</span>
-                <span><CheckCircle size={18} /> Portugal Continental - Zona Centro</span>
+                <span><CheckCircle size={18} /> Casas certificadas</span>
+                <span><CheckCircle size={18} /> Ecológicas e sustentáveis</span>
                 <span><CheckCircle size={18} /> Ajustes conforme disponibilidade</span>
               </div>
             </div>
@@ -196,7 +202,7 @@ function App() {
                   <Leaf size={24} />
                   <div>
                     <strong>Conforto natural</strong>
-                    <span>Soluções integradas com a natureza</span>
+                    <span>Design, sustentabilidade e qualidade</span>
                   </div>
                 </div>
               </div>
@@ -208,22 +214,23 @@ function App() {
           <div className="container two-columns">
             <div>
               <span className="section-label">Sobre nós</span>
-              <h2>Casas de madeira com qualidade, proximidade e confiança.</h2>
+              <h2>Casas de madeira com qualidade, sustentabilidade e confiança.</h2>
             </div>
 
             <div className="text-block">
               <p>
                 A <strong>Casas do Centro - Casas de Madeira</strong> nasce com o objetivo
-                de apresentar soluções em madeira adaptadas a diferentes necessidades, desde
-                habitação até lazer, turismo rural e investimento.
+                de apresentar soluções em madeira para diferentes necessidades, desde habitação
+                até lazer, turismo rural e investimento.
+              </p>
+              <p>
+                As nossas casas de madeira são pensadas para quem valoriza conforto,
+                sustentabilidade, design inovador e materiais de alta qualidade, respeitando
+                sempre os modelos e opções disponíveis em fábrica.
               </p>
               <p>
                 Trabalhamos com modelos definidos pela fábrica, podendo avaliar alterações
                 de tipologia, áreas e características de acordo com a disponibilidade existente.
-              </p>
-              <p>
-                O nosso objetivo é acompanhar cada cliente desde a ideia inicial até à proposta,
-                procurando unir estética, conforto, funcionalidade e integração com a natureza.
               </p>
             </div>
           </div>
@@ -258,8 +265,8 @@ function App() {
               <span className="section-label">Vantagens</span>
               <h2>Porquê escolher uma casa de madeira?</h2>
               <p>
-                Uma casa de madeira pode ser uma solução confortável, versátil e diferenciadora
-                para vários tipos de projeto.
+                As casas de madeira são uma escolha natural para quem procura sustentabilidade,
+                conforto, estética diferenciadora e materiais de qualidade.
               </p>
             </div>
 
@@ -453,7 +460,7 @@ function App() {
       <footer className="footer">
         <div className="container footer-content">
           <img src={logo} alt="Casas do Centro - Casas de Madeira" />
-          <p>Casas de madeira em Portugal, com modelos e soluções adaptáveis ao seu projeto.</p>
+          <p>Casas de madeira certificadas, ecológicas e adaptáveis ao seu projeto.</p>
           <div className="footer-links">
             <a href="#inicio">Início</a>
             <a href="#modelos">Modelos</a>
