@@ -22,6 +22,8 @@ import {
 } from '../lib/contentStorage';
 import './admin.css';
 
+const MAX_GALLERY_IMAGES_PER_SECTION = 5;
+
 type EditablePair = {
   title: string;
   text: string;
@@ -75,10 +77,38 @@ type AdminDraft = {
   };
   gallery: {
     itemsText: string;
-    imagesDataUrls: string[];
+    imagesDataUrlsBySection: string[][];
   };
   heroImageDataUrl: string;
 };
+
+function normalizeGalleryImagesBySection(patch: Record<string, any>, sectionCount: number) {
+  if (Array.isArray(patch.galleryImagesDataUrlsBySection)) {
+    return Array.from({ length: sectionCount }, (_, sectionIndex) => {
+      const sectionImages = patch.galleryImagesDataUrlsBySection[sectionIndex];
+
+      if (!Array.isArray(sectionImages)) {
+        return [];
+      }
+
+      return sectionImages.slice(0, MAX_GALLERY_IMAGES_PER_SECTION);
+    });
+  }
+
+  if (Array.isArray(patch.galleryImagesDataUrls)) {
+    return Array.from({ length: sectionCount }, (_, sectionIndex) => {
+      const legacyImage = patch.galleryImagesDataUrls[sectionIndex];
+
+      if (!legacyImage) {
+        return [];
+      }
+
+      return [legacyImage];
+    });
+  }
+
+  return Array.from({ length: sectionCount }, () => []);
+}
 
 function createInitialDraft(): AdminDraft {
   const content = loadSiteContent(siteContent);
@@ -130,9 +160,10 @@ function createInitialDraft(): AdminDraft {
     },
     gallery: {
       itemsText: content.gallery.items.join('\n'),
-      imagesDataUrls: Array.isArray(patch.galleryImagesDataUrls)
-        ? patch.galleryImagesDataUrls
-        : [],
+      imagesDataUrlsBySection: normalizeGalleryImagesBySection(
+        patch,
+        content.gallery.items.length
+      ),
     },
     heroImageDataUrl: patch.heroImageDataUrl || '',
   };
@@ -161,6 +192,18 @@ function mergeItemsWithIcons<T extends IconContentItem>(
     title: editedItems[index]?.title || originalItem.title,
     text: editedItems[index]?.text || originalItem.text,
   }));
+}
+
+function ensureGallerySectionSlots(imagesBySection: string[][], sectionCount: number) {
+  return Array.from({ length: sectionCount }, (_, sectionIndex) => {
+    const sectionImages = imagesBySection[sectionIndex];
+
+    if (!Array.isArray(sectionImages)) {
+      return [];
+    }
+
+    return sectionImages.slice(0, MAX_GALLERY_IMAGES_PER_SECTION);
+  });
 }
 
 export function AdminPanel() {
@@ -222,11 +265,7 @@ export function AdminPanel() {
     }));
   }
 
-  function updateModelItem(
-    index: number,
-    field: keyof EditablePair,
-    value: string
-  ) {
+  function updateModelItem(index: number, field: keyof EditablePair, value: string) {
     setDraft((current) => {
       const updatedModels = [...current.models];
 
@@ -255,11 +294,7 @@ export function AdminPanel() {
     }));
   }
 
-  function updateBenefitItem(
-    index: number,
-    field: keyof EditablePair,
-    value: string
-  ) {
+  function updateBenefitItem(index: number, field: keyof EditablePair, value: string) {
     setDraft((current) => {
       const updatedBenefits = [...current.benefits];
 
@@ -285,11 +320,7 @@ export function AdminPanel() {
     }));
   }
 
-  function updateFaqItem(
-    index: number,
-    field: keyof EditableFaq,
-    value: string
-  ) {
+  function updateFaqItem(index: number, field: keyof EditableFaq, value: string) {
     setDraft((current) => {
       const updatedFaqItems = [...current.faq.items];
 
@@ -309,13 +340,22 @@ export function AdminPanel() {
   }
 
   function updateGalleryField(field: keyof AdminDraft['gallery'], value: string) {
-    setDraft((current) => ({
-      ...current,
-      gallery: {
-        ...current.gallery,
-        [field]: value,
-      },
-    }));
+    setDraft((current) => {
+      const galleryItems = cleanLines(value);
+      const updatedImages = ensureGallerySectionSlots(
+        current.gallery.imagesDataUrlsBySection,
+        galleryItems.length
+      );
+
+      return {
+        ...current,
+        gallery: {
+          ...current.gallery,
+          [field]: value,
+          imagesDataUrlsBySection: updatedImages,
+        },
+      };
+    });
   }
 
   function handleHeroImageUpload(event: ChangeEvent<HTMLInputElement>) {
@@ -338,7 +378,11 @@ export function AdminPanel() {
     reader.readAsDataURL(file);
   }
 
-  function handleGalleryImageUpload(index: number, event: ChangeEvent<HTMLInputElement>) {
+  function handleGalleryImageUpload(
+    sectionIndex: number,
+    imageIndex: number,
+    event: ChangeEvent<HTMLInputElement>
+  ) {
     const file = event.target.files?.[0];
 
     if (!file) {
@@ -349,14 +393,24 @@ export function AdminPanel() {
 
     reader.onload = () => {
       setDraft((current) => {
-        const updatedImages = [...current.gallery.imagesDataUrls];
-        updatedImages[index] = String(reader.result);
+        const sectionCount = cleanLines(current.gallery.itemsText).length;
+        const updatedSections = ensureGallerySectionSlots(
+          current.gallery.imagesDataUrlsBySection,
+          sectionCount
+        );
+
+        const currentSection = [...(updatedSections[sectionIndex] || [])];
+        currentSection[imageIndex] = String(reader.result);
+        updatedSections[sectionIndex] = currentSection.slice(
+          0,
+          MAX_GALLERY_IMAGES_PER_SECTION
+        );
 
         return {
           ...current,
           gallery: {
             ...current.gallery,
-            imagesDataUrls: updatedImages,
+            imagesDataUrlsBySection: updatedSections,
           },
         };
       });
@@ -367,16 +421,24 @@ export function AdminPanel() {
     reader.readAsDataURL(file);
   }
 
-  function removeGalleryImage(index: number) {
+  function removeGalleryImage(sectionIndex: number, imageIndex: number) {
     setDraft((current) => {
-      const updatedImages = [...current.gallery.imagesDataUrls];
-      updatedImages[index] = '';
+      const sectionCount = cleanLines(current.gallery.itemsText).length;
+      const updatedSections = ensureGallerySectionSlots(
+        current.gallery.imagesDataUrlsBySection,
+        sectionCount
+      );
+
+      const currentSection = [...(updatedSections[sectionIndex] || [])];
+      currentSection[imageIndex] = '';
+
+      updatedSections[sectionIndex] = currentSection.filter(Boolean);
 
       return {
         ...current,
         gallery: {
           ...current.gallery,
-          imagesDataUrls: updatedImages,
+          imagesDataUrlsBySection: updatedSections,
         },
       };
     });
@@ -388,6 +450,10 @@ export function AdminPanel() {
     event.preventDefault();
 
     const galleryItems = cleanLines(draft.gallery.itemsText);
+    const galleryImagesDataUrlsBySection = ensureGallerySectionSlots(
+      draft.gallery.imagesDataUrlsBySection,
+      galleryItems.length
+    );
 
     saveContentPatch({
       hero: {
@@ -427,7 +493,8 @@ export function AdminPanel() {
       gallery: {
         items: galleryItems,
       },
-      galleryImagesDataUrls: draft.gallery.imagesDataUrls,
+      galleryImagesDataUrlsBySection,
+      galleryImagesDataUrls: [],
       heroImageDataUrl: draft.heroImageDataUrl,
     });
 
@@ -447,7 +514,8 @@ export function AdminPanel() {
           <span className="admin-kicker">Área administrativa</span>
           <h1>Casas do Centro</h1>
           <p>
-            Painel piloto para editar textos principais, imagens, modelos, vantagens, FAQ e contactos.
+            Painel piloto para editar textos principais, imagens, modelos,
+            vantagens, FAQ e contactos.
           </p>
         </div>
 
@@ -716,13 +784,15 @@ export function AdminPanel() {
                 <Images size={22} />
                 <div>
                   <h3>Galeria</h3>
-                  <p>Editar nomes e imagens dos blocos da galeria do website.</p>
+                  <p>
+                    Edita as sessões da galeria e adiciona até 5 fotos por sessão.
+                  </p>
                 </div>
               </div>
 
               <label>
-                Nomes dos blocos da galeria
-                <small>Coloca um nome por linha. A ordem aqui será a ordem no site.</small>
+                Nomes das sessões da galeria
+                <small>Coloca uma sessão por linha. Exemplo: Exterior, Interior, Acabamentos.</small>
                 <textarea
                   rows={6}
                   value={draft.gallery.itemsText}
@@ -730,47 +800,75 @@ export function AdminPanel() {
                 />
               </label>
 
-              <div className="admin-gallery-editor">
-                {previewContent.galleryItems.map((item, index) => (
-                  <div className="admin-gallery-card" key={`${item}-${index}`}>
-                    <div>
-                      <strong>{item}</strong>
-                      <small>Imagem {index + 1}</small>
-                    </div>
+              <div className="admin-gallery-sections">
+                {previewContent.galleryItems.map((item, sectionIndex) => {
+                  const sectionImages =
+                    draft.gallery.imagesDataUrlsBySection[sectionIndex] || [];
 
-                    {draft.gallery.imagesDataUrls[index] ? (
-                      <img
-                        src={draft.gallery.imagesDataUrls[index]}
-                        alt={`Imagem da galeria ${item}`}
-                      />
-                    ) : (
-                      <div className="admin-gallery-placeholder">
-                        <Images size={26} />
-                        <span>Sem imagem</span>
+                  return (
+                    <div className="admin-gallery-section" key={`${item}-${sectionIndex}`}>
+                      <div className="admin-gallery-section-header">
+                        <div>
+                          <strong>{item}</strong>
+                          <small>
+                            {sectionImages.filter(Boolean).length} de {MAX_GALLERY_IMAGES_PER_SECTION} fotos
+                          </small>
+                        </div>
                       </div>
-                    )}
 
-                    <label className="admin-gallery-upload">
-                      <ImagePlus size={18} />
-                      Escolher imagem
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={(event) => handleGalleryImageUpload(index, event)}
-                      />
-                    </label>
+                      <div className="admin-gallery-slots">
+                        {Array.from({ length: MAX_GALLERY_IMAGES_PER_SECTION }).map(
+                          (_, imageIndex) => {
+                            const image = sectionImages[imageIndex];
 
-                    {draft.gallery.imagesDataUrls[index] && (
-                      <button
-                        type="button"
-                        className="admin-remove-image"
-                        onClick={() => removeGalleryImage(index)}
-                      >
-                        Remover imagem
-                      </button>
-                    )}
-                  </div>
-                ))}
+                            return (
+                              <div
+                                className="admin-gallery-slot"
+                                key={`${item}-${sectionIndex}-${imageIndex}`}
+                              >
+                                {image ? (
+                                  <img
+                                    src={image}
+                                    alt={`${item} ${imageIndex + 1}`}
+                                  />
+                                ) : (
+                                  <div className="admin-gallery-placeholder">
+                                    <Images size={22} />
+                                    <span>Foto {imageIndex + 1}</span>
+                                  </div>
+                                )}
+
+                                <label className="admin-gallery-upload">
+                                  <ImagePlus size={16} />
+                                  Escolher
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={(event) =>
+                                      handleGalleryImageUpload(sectionIndex, imageIndex, event)
+                                    }
+                                  />
+                                </label>
+
+                                {image && (
+                                  <button
+                                    type="button"
+                                    className="admin-remove-image"
+                                    onClick={() =>
+                                      removeGalleryImage(sectionIndex, imageIndex)
+                                    }
+                                  >
+                                    Remover
+                                  </button>
+                                )}
+                              </div>
+                            );
+                          }
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
@@ -931,11 +1029,18 @@ export function AdminPanel() {
 
             <div className="admin-preview-card small">
               <span className="admin-kicker">Galeria</span>
-              <h3>Blocos configurados</h3>
+              <h3>Sessões configuradas</h3>
               <div className="admin-preview-tags">
-                {previewContent.galleryItems.map((item) => (
-                  <span key={item}>{item}</span>
-                ))}
+                {previewContent.galleryItems.map((item, index) => {
+                  const imageCount =
+                    draft.gallery.imagesDataUrlsBySection[index]?.filter(Boolean).length || 0;
+
+                  return (
+                    <span key={item}>
+                      {item}: {imageCount} fotos
+                    </span>
+                  );
+                })}
               </div>
             </div>
 

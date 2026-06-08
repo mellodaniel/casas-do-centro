@@ -18,6 +18,34 @@ import { siteContent } from './data/siteContent';
 import { loadContentPatch, loadSiteContent } from './lib/contentStorage';
 import { AdminPanel } from './admin/AdminPanel';
 
+function normalizeGalleryImagesBySection(patch: Record<string, any>, sectionCount: number) {
+  if (Array.isArray(patch.galleryImagesDataUrlsBySection)) {
+    return Array.from({ length: sectionCount }, (_, sectionIndex) => {
+      const sectionImages = patch.galleryImagesDataUrlsBySection[sectionIndex];
+
+      if (!Array.isArray(sectionImages)) {
+        return [];
+      }
+
+      return sectionImages.filter(Boolean).slice(0, 5);
+    });
+  }
+
+  if (Array.isArray(patch.galleryImagesDataUrls)) {
+    return Array.from({ length: sectionCount }, (_, sectionIndex) => {
+      const legacyImage = patch.galleryImagesDataUrls[sectionIndex];
+
+      if (!legacyImage) {
+        return [];
+      }
+
+      return [legacyImage];
+    });
+  }
+
+  return Array.from({ length: sectionCount }, () => []);
+}
+
 function App() {
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -26,9 +54,10 @@ function App() {
   const content = useMemo(() => loadSiteContent(siteContent), []);
   const patch = useMemo(() => loadContentPatch(), []);
 
-  const galleryImagesDataUrls = Array.isArray(patch.galleryImagesDataUrls)
-    ? patch.galleryImagesDataUrls
-    : [];
+  const galleryImagesBySection = useMemo(
+    () => normalizeGalleryImagesBySection(patch, content.gallery.items.length),
+    [patch, content.gallery.items.length]
+  );
 
   const whatsappMessage = encodeURIComponent(content.contact.whatsappMessage);
 
@@ -228,27 +257,44 @@ function App() {
               <p>{content.gallery.description}</p>
             </div>
 
-            <div className="gallery-grid">
-              {content.gallery.items.map((item, index) => {
-                const image = galleryImagesDataUrls[index];
+            <div className="gallery-sections-grid">
+              {content.gallery.items.map((item, sectionIndex) => {
+                const images = galleryImagesBySection[sectionIndex] || [];
 
                 return (
-                  <div
-                    className={`gallery-item ${index === 0 ? 'large' : ''} ${
-                      index === content.gallery.items.length - 1 ? 'wide' : ''
-                    } ${image ? 'has-gallery-image' : ''}`}
-                    key={`${item}-${index}`}
-                    style={
-                      image
-                        ? {
-                            backgroundImage: `linear-gradient(180deg, rgba(0, 0, 0, 0.08), rgba(77, 46, 0, 0.7)), url(${image})`,
-                          }
-                        : undefined
-                    }
-                  >
-                    {!image && <Images size={index === 0 ? 34 : 30} />}
-                    <strong>{item}</strong>
-                  </div>
+                  <article className="gallery-section-card" key={`${item}-${sectionIndex}`}>
+                    <div className="gallery-section-heading">
+                      <div>
+                        <span>Galeria</span>
+                        <h3>{item}</h3>
+                      </div>
+
+                      {images.length > 0 && (
+                        <small>
+                          {images.length} {images.length === 1 ? 'foto' : 'fotos'}
+                        </small>
+                      )}
+                    </div>
+
+                    {images.length > 0 ? (
+                      <div className={`gallery-photo-grid photos-${images.length}`}>
+                        {images.map((image, imageIndex) => (
+                          <div
+                            className="gallery-photo"
+                            key={`${item}-${imageIndex}`}
+                            style={{ backgroundImage: `url(${image})` }}
+                            aria-label={`${item} ${imageIndex + 1}`}
+                          />
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="gallery-empty-state">
+                        <Images size={32} />
+                        <strong>{item}</strong>
+                        <span>Imagens a adicionar brevemente</span>
+                      </div>
+                    )}
+                  </article>
                 );
               })}
             </div>
