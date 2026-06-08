@@ -172,7 +172,7 @@ function App() {
 
               <div className="hero-highlights">
                 <span><CheckCircle size={18} /> Projetos personalizados</span>
-                <span><CheckCircle size={18} /> Portugal Continental</span>
+                <span><CheckCircle size={18} /> Portugal Continental - Zona Centro</span>
                 <span><CheckCircle size={18} /> Soluções em madeira</span>
               </div>
             </div>
