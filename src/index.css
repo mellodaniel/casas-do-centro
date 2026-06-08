@@ -256,7 +256,8 @@ textarea {
 
 .floating-card {
   position: absolute;
-  left: -24px;
+  left: 42px;
+  right: 42px;
   bottom: 36px;
   display: flex;
   align-items: center;
@@ -266,7 +267,7 @@ textarea {
   padding: 16px 18px;
   border-radius: 20px;
   box-shadow: 0 16px 34px rgba(0, 0, 0, 0.14);
-  max-width: 270px;
+  max-width: none;
 }
 
 .floating-card svg {
@@ -774,8 +775,9 @@ textarea {
   }
 
   .floating-card {
-    left: 18px;
-    bottom: 22px;
+    left: 30px;
+    right: 30px;
+    bottom: 26px;
   }
 
   .gallery-grid {
