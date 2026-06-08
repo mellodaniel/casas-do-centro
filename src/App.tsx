@@ -348,6 +348,14 @@ function App() {
       </footer>
 
       <a
+        className="admin-access-link"
+        href="/admin"
+        aria-label="Abrir área administrativa"
+      >
+        Admin
+      </a>
+
+      <a
         className="floating-whatsapp"
         href={`https://wa.me/${content.contact.whatsappNumber}?text=${whatsappMessage}`}
         target="_blank"
