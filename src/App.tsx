@@ -10,25 +10,35 @@ import {
   CheckCircle,
   HelpCircle,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import './index.css';
 import logo from './assets/logo.png';
 import heroImage from './assets/hero-casa-madeira.jpeg';
 import { siteContent } from './data/siteContent';
+import { loadSiteContent } from './lib/contentStorage';
+import { AdminPanel } from './admin/AdminPanel';
 
 function App() {
   const [menuOpen, setMenuOpen] = useState(false);
 
-  const whatsappMessage = encodeURIComponent(siteContent.contact.whatsappMessage);
+  const isAdminPage = window.location.pathname === '/admin';
+
+  const content = useMemo(() => loadSiteContent(siteContent), []);
+
+  const whatsappMessage = encodeURIComponent(content.contact.whatsappMessage);
 
   const closeMenu = () => setMenuOpen(false);
+
+  if (isAdminPage) {
+    return <AdminPanel />;
+  }
 
   return (
     <div className="site">
       <header className="header">
         <div className="container header-content">
           <a href="#inicio" className="logo-area" onClick={closeMenu}>
-            <img src={logo} alt={siteContent.company.name} />
+            <img src={logo} alt={content.company.name} />
           </a>
 
           <button
@@ -40,7 +50,7 @@ function App() {
           </button>
 
           <nav className={`nav ${menuOpen ? 'open' : ''}`}>
-            {siteContent.navigation.map((item) => (
+            {content.navigation.map((item) => (
               <a key={item.href} href={item.href} onClick={closeMenu}>
                 {item.label}
               </a>
@@ -56,25 +66,25 @@ function App() {
         <section id="inicio" className="hero">
           <div className="container hero-content">
             <div className="hero-text">
-              <span className="eyebrow">{siteContent.hero.eyebrow}</span>
+              <span className="eyebrow">{content.hero.eyebrow}</span>
 
-              <h1>{siteContent.hero.title}</h1>
+              <h1>{content.hero.title}</h1>
 
-              <h2>{siteContent.hero.subtitle}</h2>
+              <h2>{content.hero.subtitle}</h2>
 
-              <p>{siteContent.hero.description}</p>
+              <p>{content.hero.description}</p>
 
               <div className="hero-actions">
                 <a href="#contacto" className="btn primary">
-                  {siteContent.hero.primaryButton}
+                  {content.hero.primaryButton}
                 </a>
                 <a href="#modelos" className="btn secondary">
-                  {siteContent.hero.secondaryButton}
+                  {content.hero.secondaryButton}
                 </a>
               </div>
 
               <div className="hero-highlights">
-                {siteContent.hero.highlights.map((highlight) => (
+                {content.hero.highlights.map((highlight) => (
                   <span key={highlight}>
                     <CheckCircle size={18} /> {highlight}
                   </span>
@@ -85,16 +95,16 @@ function App() {
             <div className="hero-visual">
               <div className="hero-image-card real-image-card">
                 <img
-                  src={heroImage}
-                  alt={siteContent.hero.imageAlt}
+                  src={content.heroImageDataUrl || heroImage}
+                  alt={content.hero.imageAlt}
                   className="hero-main-image"
                 />
 
                 <div className="floating-card">
                   <Leaf size={24} />
                   <div>
-                    <strong>{siteContent.hero.floatingCardTitle}</strong>
-                    <span>{siteContent.hero.floatingCardText}</span>
+                    <strong>{content.hero.floatingCardTitle}</strong>
+                    <span>{content.hero.floatingCardText}</span>
                   </div>
                 </div>
               </div>
@@ -105,12 +115,12 @@ function App() {
         <section id="sobre" className="section">
           <div className="container two-columns">
             <div>
-              <span className="section-label">{siteContent.about.label}</span>
-              <h2>{siteContent.about.title}</h2>
+              <span className="section-label">{content.about.label}</span>
+              <h2>{content.about.title}</h2>
             </div>
 
             <div className="text-block">
-              {siteContent.about.paragraphs.map((paragraph) => (
+              {content.about.paragraphs.map((paragraph) => (
                 <p key={paragraph}>{paragraph}</p>
               ))}
             </div>
@@ -120,13 +130,13 @@ function App() {
         <section id="modelos" className="section soft-bg">
           <div className="container">
             <div className="section-heading">
-              <span className="section-label">{siteContent.modelsSection.label}</span>
-              <h2>{siteContent.modelsSection.title}</h2>
-              <p>{siteContent.modelsSection.description}</p>
+              <span className="section-label">{content.modelsSection.label}</span>
+              <h2>{content.modelsSection.title}</h2>
+              <p>{content.modelsSection.description}</p>
             </div>
 
             <div className="cards-grid">
-              {siteContent.models.map((model) => {
+              {content.models.map((model) => {
                 const Icon = model.icon;
 
                 return (
@@ -144,13 +154,13 @@ function App() {
         <section id="vantagens" className="section">
           <div className="container">
             <div className="section-heading">
-              <span className="section-label">{siteContent.benefitsSection.label}</span>
-              <h2>{siteContent.benefitsSection.title}</h2>
-              <p>{siteContent.benefitsSection.description}</p>
+              <span className="section-label">{content.benefitsSection.label}</span>
+              <h2>{content.benefitsSection.title}</h2>
+              <p>{content.benefitsSection.description}</p>
             </div>
 
             <div className="benefits-grid">
-              {siteContent.benefits.map((benefit) => {
+              {content.benefits.map((benefit) => {
                 const Icon = benefit.icon;
 
                 return (
@@ -170,13 +180,13 @@ function App() {
         <section className="section ideal-section">
           <div className="container ideal-content">
             <div>
-              <span className="section-label light">{siteContent.ideal.label}</span>
-              <h2>{siteContent.ideal.title}</h2>
-              <p>{siteContent.ideal.description}</p>
+              <span className="section-label light">{content.ideal.label}</span>
+              <h2>{content.ideal.title}</h2>
+              <p>{content.ideal.description}</p>
             </div>
 
             <div className="ideal-list">
-              {siteContent.ideal.items.map((item) => (
+              {content.ideal.items.map((item) => (
                 <span key={item}>
                   <CheckCircle size={18} />
                   {item}
@@ -189,12 +199,12 @@ function App() {
         <section className="section process-section">
           <div className="container">
             <div className="section-heading">
-              <span className="section-label light">{siteContent.process.label}</span>
-              <h2>{siteContent.process.title}</h2>
+              <span className="section-label light">{content.process.label}</span>
+              <h2>{content.process.title}</h2>
             </div>
 
             <div className="process-grid">
-              {siteContent.process.steps.map((step) => (
+              {content.process.steps.map((step) => (
                 <div className="process-card" key={step.number}>
                   <span>{step.number}</span>
                   <h3>{step.title}</h3>
@@ -208,16 +218,16 @@ function App() {
         <section id="galeria" className="section soft-bg">
           <div className="container">
             <div className="section-heading">
-              <span className="section-label">{siteContent.gallery.label}</span>
-              <h2>{siteContent.gallery.title}</h2>
-              <p>{siteContent.gallery.description}</p>
+              <span className="section-label">{content.gallery.label}</span>
+              <h2>{content.gallery.title}</h2>
+              <p>{content.gallery.description}</p>
             </div>
 
             <div className="gallery-grid">
-              {siteContent.gallery.items.map((item, index) => (
+              {content.gallery.items.map((item, index) => (
                 <div
                   className={`gallery-item ${index === 0 ? 'large' : ''} ${
-                    index === siteContent.gallery.items.length - 1 ? 'wide' : ''
+                    index === content.gallery.items.length - 1 ? 'wide' : ''
                   }`}
                   key={item}
                 >
@@ -232,13 +242,13 @@ function App() {
         <section id="faq" className="section">
           <div className="container faq-layout">
             <div>
-              <span className="section-label">{siteContent.faq.label}</span>
-              <h2>{siteContent.faq.title}</h2>
-              <p>{siteContent.faq.description}</p>
+              <span className="section-label">{content.faq.label}</span>
+              <h2>{content.faq.title}</h2>
+              <p>{content.faq.description}</p>
             </div>
 
             <div className="faq-list">
-              {siteContent.faq.items.map((faq) => (
+              {content.faq.items.map((faq) => (
                 <details key={faq.question} className="faq-item">
                   <summary>
                     <HelpCircle size={20} />
@@ -254,25 +264,25 @@ function App() {
         <section id="contacto" className="section contact-section">
           <div className="container contact-grid">
             <div>
-              <span className="section-label">{siteContent.contactSection.label}</span>
-              <h2>{siteContent.contactSection.title}</h2>
-              <p>{siteContent.contactSection.description}</p>
+              <span className="section-label">{content.contactSection.label}</span>
+              <h2>{content.contactSection.title}</h2>
+              <p>{content.contactSection.description}</p>
 
               <div className="contact-info">
                 <p>
-                  <Phone size={18} /> {siteContent.contact.phone}
+                  <Phone size={18} /> {content.contact.phone}
                 </p>
                 <p>
-                  <Mail size={18} /> {siteContent.contact.email}
+                  <Mail size={18} /> {content.contact.email}
                 </p>
                 <p>
-                  <MapPin size={18} /> {siteContent.contact.location}
+                  <MapPin size={18} /> {content.contact.location}
                 </p>
               </div>
 
               <a
                 className="whatsapp-link"
-                href={`https://wa.me/${siteContent.contact.whatsappNumber}?text=${whatsappMessage}`}
+                href={`https://wa.me/${content.contact.whatsappNumber}?text=${whatsappMessage}`}
                 target="_blank"
                 rel="noreferrer"
               >
@@ -316,7 +326,7 @@ function App() {
 
               <button type="submit">Enviar pedido de orçamento</button>
 
-              <small>{siteContent.contactSection.formNote}</small>
+              <small>{content.contactSection.formNote}</small>
             </form>
           </div>
         </section>
@@ -324,22 +334,22 @@ function App() {
 
       <footer className="footer">
         <div className="container footer-content">
-          <img src={logo} alt={siteContent.company.name} />
-          <p>{siteContent.company.slogan}</p>
+          <img src={logo} alt={content.company.name} />
+          <p>{content.company.slogan}</p>
           <div className="footer-links">
-            {siteContent.navigation.map((item) => (
+            {content.navigation.map((item) => (
               <a key={item.href} href={item.href}>
                 {item.label}
               </a>
             ))}
           </div>
-          <small>{siteContent.footer.copyright}</small>
+          <small>{content.footer.copyright}</small>
         </div>
       </footer>
 
       <a
         className="floating-whatsapp"
-        href={`https://wa.me/${siteContent.contact.whatsappNumber}?text=${whatsappMessage}`}
+        href={`https://wa.me/${content.contact.whatsappNumber}?text=${whatsappMessage}`}
         target="_blank"
         rel="noreferrer"
         aria-label="Falar pelo WhatsApp"
