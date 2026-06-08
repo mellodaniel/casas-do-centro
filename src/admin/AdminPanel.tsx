@@ -1156,8 +1156,8 @@ export function AdminPanel() {
             <div className="admin-note">
               <strong>Nota importante:</strong>
               <p>
-                As alterações só ficam públicas depois de carregar em “Guardar alterações”.
-                As imagens são enviadas para o Supabase Storage.
+              Depois de fazer alterações nos textos ou imagens, clique sempre em “Guardar alterações”
+              para que o conteúdo fique atualizado no website.
               </p>
             </div>
           </aside>
