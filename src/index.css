@@ -226,16 +226,41 @@ textarea {
 .hero-image-card {
   position: relative;
   width: 100%;
-  max-width: 480px;
+  max-width: 560px;
   margin-left: auto;
-  border-radius: 34px;
-  box-shadow: var(--shadow);
+  border-radius: 38px;
+  padding: 18px;
+  background:
+    linear-gradient(135deg, rgba(255, 250, 242, 0.96), rgba(248, 243, 234, 0.88));
+  border: 1px solid rgba(122, 72, 0, 0.16);
+  box-shadow:
+    0 24px 60px rgba(77, 46, 0, 0.14),
+    0 0 0 10px rgba(67, 165, 47, 0.04);
+}
+
+.hero-image-card::before {
+  content: "";
+  position: absolute;
+  inset: -18px;
+  border-radius: 48px;
+  border: 1px solid rgba(67, 165, 47, 0.12);
+  z-index: -1;
+}
+
+.hero-image-card::after {
+  content: "";
+  position: absolute;
+  right: -26px;
+  bottom: -26px;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: rgba(67, 165, 47, 0.12);
+  z-index: -1;
 }
 
 .real-image-card {
-  overflow: hidden;
-  padding: 0;
-  background: var(--brown-dark);
+  overflow: visible;
 }
 
 .hero-main-image {
@@ -244,14 +269,16 @@ textarea {
   display: block;
   object-fit: cover;
   object-position: center;
-  border-radius: 34px;
+  border-radius: 28px;
+  border: 1px solid rgba(122, 72, 0, 0.12);
+  box-shadow: 0 14px 34px rgba(77, 46, 0, 0.16);
 }
 
 .floating-card {
   position: absolute;
-  left: 28px;
-  right: 28px;
-  bottom: 24px;
+  left: 38px;
+  right: 38px;
+  bottom: 38px;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -743,7 +770,11 @@ textarea {
   }
 
   .hero-main-image {
-    height: 380px;
+    height: 370px;
+  }
+
+  .hero-image-card {
+    max-width: 500px;
   }
 }
 
@@ -802,18 +833,18 @@ textarea {
   }
 
   .hero-image-card {
-    max-width: 100%;
+    max-width: 620px;
     margin: 8px auto 0;
   }
 
   .hero-main-image {
-    height: 390px;
+    height: 360px;
   }
 
   .floating-card {
-    left: 24px;
-    right: 24px;
-    bottom: 22px;
+    left: 36px;
+    right: 36px;
+    bottom: 34px;
   }
 
   .gallery-grid {
@@ -894,12 +925,28 @@ textarea {
   }
 
   .hero-main-image {
-    height: 285px;
-    border-radius: 26px;
+    height: 245px;
+    border-radius: 22px;
   }
 
   .hero-image-card {
-    border-radius: 26px;
+    border-radius: 28px;
+    padding: 10px;
+    box-shadow:
+      0 18px 38px rgba(77, 46, 0, 0.12),
+      0 0 0 6px rgba(67, 165, 47, 0.035);
+  }
+
+  .hero-image-card::before {
+    inset: -8px;
+    border-radius: 34px;
+  }
+
+  .hero-image-card::after {
+    width: 70px;
+    height: 70px;
+    right: -12px;
+    bottom: -12px;
   }
 
   .floating-card {
