@@ -9,6 +9,9 @@ import {
   Phone,
   Building,
   Images,
+  LayoutList,
+  BadgeCheck,
+  HelpCircle,
 } from 'lucide-react';
 import { siteContent } from '../data/siteContent';
 import {
@@ -18,6 +21,22 @@ import {
   saveContentPatch,
 } from '../lib/contentStorage';
 import './admin.css';
+
+type EditablePair = {
+  title: string;
+  text: string;
+};
+
+type EditableFaq = {
+  question: string;
+  answer: string;
+};
+
+type IconContentItem = {
+  icon: unknown;
+  title: string;
+  text: string;
+};
 
 type AdminDraft = {
   hero: {
@@ -38,6 +57,21 @@ type AdminDraft = {
     location: string;
     whatsappNumber: string;
     whatsappMessage: string;
+  };
+  modelsSection: {
+    title: string;
+    description: string;
+  };
+  models: EditablePair[];
+  benefitsSection: {
+    title: string;
+    description: string;
+  };
+  benefits: EditablePair[];
+  faq: {
+    title: string;
+    description: string;
+    items: EditableFaq[];
   };
   gallery: {
     itemsText: string;
@@ -70,6 +104,30 @@ function createInitialDraft(): AdminDraft {
       whatsappNumber: content.contact.whatsappNumber,
       whatsappMessage: content.contact.whatsappMessage,
     },
+    modelsSection: {
+      title: content.modelsSection.title,
+      description: content.modelsSection.description,
+    },
+    models: content.models.map((model) => ({
+      title: model.title,
+      text: model.text,
+    })),
+    benefitsSection: {
+      title: content.benefitsSection.title,
+      description: content.benefitsSection.description,
+    },
+    benefits: content.benefits.map((benefit) => ({
+      title: benefit.title,
+      text: benefit.text,
+    })),
+    faq: {
+      title: content.faq.title,
+      description: content.faq.description,
+      items: content.faq.items.map((item) => ({
+        question: item.question,
+        answer: item.answer,
+      })),
+    },
     gallery: {
       itemsText: content.gallery.items.join('\n'),
       imagesDataUrls: Array.isArray(patch.galleryImagesDataUrls)
@@ -92,6 +150,17 @@ function cleanParagraphs(value: string) {
     .split('\n\n')
     .map((item) => item.trim())
     .filter(Boolean);
+}
+
+function mergeItemsWithIcons<T extends IconContentItem>(
+  originalItems: T[],
+  editedItems: EditablePair[]
+): T[] {
+  return originalItems.map((originalItem, index) => ({
+    ...originalItem,
+    title: editedItems[index]?.title || originalItem.title,
+    text: editedItems[index]?.text || originalItem.text,
+  }));
 }
 
 export function AdminPanel() {
@@ -138,6 +207,105 @@ export function AdminPanel() {
         [field]: value,
       },
     }));
+  }
+
+  function updateModelsSectionField(
+    field: keyof AdminDraft['modelsSection'],
+    value: string
+  ) {
+    setDraft((current) => ({
+      ...current,
+      modelsSection: {
+        ...current.modelsSection,
+        [field]: value,
+      },
+    }));
+  }
+
+  function updateModelItem(
+    index: number,
+    field: keyof EditablePair,
+    value: string
+  ) {
+    setDraft((current) => {
+      const updatedModels = [...current.models];
+
+      updatedModels[index] = {
+        ...updatedModels[index],
+        [field]: value,
+      };
+
+      return {
+        ...current,
+        models: updatedModels,
+      };
+    });
+  }
+
+  function updateBenefitsSectionField(
+    field: keyof AdminDraft['benefitsSection'],
+    value: string
+  ) {
+    setDraft((current) => ({
+      ...current,
+      benefitsSection: {
+        ...current.benefitsSection,
+        [field]: value,
+      },
+    }));
+  }
+
+  function updateBenefitItem(
+    index: number,
+    field: keyof EditablePair,
+    value: string
+  ) {
+    setDraft((current) => {
+      const updatedBenefits = [...current.benefits];
+
+      updatedBenefits[index] = {
+        ...updatedBenefits[index],
+        [field]: value,
+      };
+
+      return {
+        ...current,
+        benefits: updatedBenefits,
+      };
+    });
+  }
+
+  function updateFaqField(field: 'title' | 'description', value: string) {
+    setDraft((current) => ({
+      ...current,
+      faq: {
+        ...current.faq,
+        [field]: value,
+      },
+    }));
+  }
+
+  function updateFaqItem(
+    index: number,
+    field: keyof EditableFaq,
+    value: string
+  ) {
+    setDraft((current) => {
+      const updatedFaqItems = [...current.faq.items];
+
+      updatedFaqItems[index] = {
+        ...updatedFaqItems[index],
+        [field]: value,
+      };
+
+      return {
+        ...current,
+        faq: {
+          ...current.faq,
+          items: updatedFaqItems,
+        },
+      };
+    });
   }
 
   function updateGalleryField(field: keyof AdminDraft['gallery'], value: string) {
@@ -241,6 +409,21 @@ export function AdminPanel() {
         whatsappNumber: draft.contact.whatsappNumber,
         whatsappMessage: draft.contact.whatsappMessage,
       },
+      modelsSection: {
+        title: draft.modelsSection.title,
+        description: draft.modelsSection.description,
+      },
+      models: mergeItemsWithIcons(siteContent.models, draft.models),
+      benefitsSection: {
+        title: draft.benefitsSection.title,
+        description: draft.benefitsSection.description,
+      },
+      benefits: mergeItemsWithIcons(siteContent.benefits, draft.benefits),
+      faq: {
+        title: draft.faq.title,
+        description: draft.faq.description,
+        items: draft.faq.items,
+      },
       gallery: {
         items: galleryItems,
       },
@@ -264,13 +447,16 @@ export function AdminPanel() {
           <span className="admin-kicker">Área administrativa</span>
           <h1>Casas do Centro</h1>
           <p>
-            Painel piloto para editar textos principais, contactos e imagens do website.
+            Painel piloto para editar textos principais, contactos, modelos, vantagens, FAQ e imagens.
           </p>
         </div>
 
         <nav className="admin-sidebar-nav">
           <a href="#hero">Homepage</a>
           <a href="#sobre">Sobre nós</a>
+          <a href="#modelos">Modelos</a>
+          <a href="#vantagens">Vantagens</a>
+          <a href="#faq-admin">FAQ</a>
           <a href="#contactos">Contactos</a>
           <a href="#imagem">Imagem principal</a>
           <a href="#galeria">Galeria</a>
@@ -394,6 +580,162 @@ export function AdminPanel() {
                   onChange={(event) => updateAboutField('paragraphsText', event.target.value)}
                 />
               </label>
+            </div>
+
+            <div id="modelos" className="admin-card">
+              <div className="admin-card-heading">
+                <LayoutList size={22} />
+                <div>
+                  <h3>Modelos</h3>
+                  <p>Editar o título, descrição e textos dos modelos apresentados no site.</p>
+                </div>
+              </div>
+
+              <label>
+                Título da secção
+                <input
+                  value={draft.modelsSection.title}
+                  onChange={(event) => updateModelsSectionField('title', event.target.value)}
+                />
+              </label>
+
+              <label>
+                Descrição da secção
+                <textarea
+                  rows={4}
+                  value={draft.modelsSection.description}
+                  onChange={(event) => updateModelsSectionField('description', event.target.value)}
+                />
+              </label>
+
+              <div className="admin-repeat-list">
+                {draft.models.map((model, index) => (
+                  <div className="admin-repeat-item" key={`model-${index}`}>
+                    <strong>Modelo {index + 1}</strong>
+
+                    <label>
+                      Título
+                      <input
+                        value={model.title}
+                        onChange={(event) => updateModelItem(index, 'title', event.target.value)}
+                      />
+                    </label>
+
+                    <label>
+                      Texto
+                      <textarea
+                        rows={4}
+                        value={model.text}
+                        onChange={(event) => updateModelItem(index, 'text', event.target.value)}
+                      />
+                    </label>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div id="vantagens" className="admin-card">
+              <div className="admin-card-heading">
+                <BadgeCheck size={22} />
+                <div>
+                  <h3>Vantagens</h3>
+                  <p>Editar o título, descrição e textos das vantagens do website.</p>
+                </div>
+              </div>
+
+              <label>
+                Título da secção
+                <input
+                  value={draft.benefitsSection.title}
+                  onChange={(event) => updateBenefitsSectionField('title', event.target.value)}
+                />
+              </label>
+
+              <label>
+                Descrição da secção
+                <textarea
+                  rows={4}
+                  value={draft.benefitsSection.description}
+                  onChange={(event) => updateBenefitsSectionField('description', event.target.value)}
+                />
+              </label>
+
+              <div className="admin-repeat-list">
+                {draft.benefits.map((benefit, index) => (
+                  <div className="admin-repeat-item" key={`benefit-${index}`}>
+                    <strong>Vantagem {index + 1}</strong>
+
+                    <label>
+                      Título
+                      <input
+                        value={benefit.title}
+                        onChange={(event) => updateBenefitItem(index, 'title', event.target.value)}
+                      />
+                    </label>
+
+                    <label>
+                      Texto
+                      <textarea
+                        rows={4}
+                        value={benefit.text}
+                        onChange={(event) => updateBenefitItem(index, 'text', event.target.value)}
+                      />
+                    </label>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div id="faq-admin" className="admin-card">
+              <div className="admin-card-heading">
+                <HelpCircle size={22} />
+                <div>
+                  <h3>FAQ</h3>
+                  <p>Editar perguntas e respostas apresentadas na área de dúvidas frequentes.</p>
+                </div>
+              </div>
+
+              <label>
+                Título da secção
+                <input
+                  value={draft.faq.title}
+                  onChange={(event) => updateFaqField('title', event.target.value)}
+                />
+              </label>
+
+              <label>
+                Descrição da secção
+                <textarea
+                  rows={4}
+                  value={draft.faq.description}
+                  onChange={(event) => updateFaqField('description', event.target.value)}
+                />
+              </label>
+
+              <div className="admin-repeat-list">
+                {draft.faq.items.map((faq, index) => (
+                  <div className="admin-repeat-item" key={`faq-${index}`}>
+                    <strong>Pergunta {index + 1}</strong>
+
+                    <label>
+                      Pergunta
+                      <input
+                        value={faq.question}
+                        onChange={(event) => updateFaqItem(index, 'question', event.target.value)}
+                      />
+                    </label>
+
+                    <label>
+                      Resposta
+                      <textarea
+                        rows={5}
+                        value={faq.answer}
+                        onChange={(event) => updateFaqItem(index, 'answer', event.target.value)}
+                      />
+                    </label>
+                  </div>
+                ))}
+              </div>
             </div>
 
             <div id="contactos" className="admin-card">
@@ -565,6 +907,36 @@ export function AdminPanel() {
               {previewContent.aboutParagraphs.slice(0, 2).map((paragraph) => (
                 <p key={paragraph}>{paragraph}</p>
               ))}
+            </div>
+
+            <div className="admin-preview-card small">
+              <span className="admin-kicker">Modelos</span>
+              <h3>{draft.modelsSection.title}</h3>
+              <div className="admin-preview-tags">
+                {draft.models.map((model) => (
+                  <span key={model.title}>{model.title}</span>
+                ))}
+              </div>
+            </div>
+
+            <div className="admin-preview-card small">
+              <span className="admin-kicker">Vantagens</span>
+              <h3>{draft.benefitsSection.title}</h3>
+              <div className="admin-preview-tags">
+                {draft.benefits.map((benefit) => (
+                  <span key={benefit.title}>{benefit.title}</span>
+                ))}
+              </div>
+            </div>
+
+            <div className="admin-preview-card small">
+              <span className="admin-kicker">FAQ</span>
+              <h3>{draft.faq.title}</h3>
+              <div className="admin-preview-tags">
+                {draft.faq.items.map((faq) => (
+                  <span key={faq.question}>{faq.question}</span>
+                ))}
+              </div>
             </div>
 
             <div className="admin-preview-card small">

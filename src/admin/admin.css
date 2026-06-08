@@ -224,6 +224,30 @@
   gap: 14px;
 }
 
+.admin-repeat-list {
+  display: grid;
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.admin-repeat-item {
+  background: #fffaf2;
+  border: 1px solid rgba(122, 72, 0, 0.14);
+  border-radius: 20px;
+  padding: 18px;
+}
+
+.admin-repeat-item > strong {
+  display: block;
+  color: #4d2e00;
+  margin-bottom: 14px;
+  font-size: 0.96rem;
+}
+
+.admin-repeat-item label:last-child {
+  margin-bottom: 0;
+}
+
 .admin-upload {
   border: 2px dashed rgba(122, 72, 0, 0.22);
   background: #fffaf2;
