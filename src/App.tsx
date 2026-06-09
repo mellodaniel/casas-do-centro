@@ -10,7 +10,7 @@ import {
   CheckCircle,
   HelpCircle,
 } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import './index.css';
 import logo from './assets/logo.png';
 import heroImage from './assets/hero-casa-madeira.jpeg';
@@ -21,6 +21,29 @@ import {
   getSiteContentPatch,
   type ContentPatch,
 } from './lib/siteContentService';
+import { createCrmLead } from './lib/crmService';
+
+type ContactFormState = {
+  name: string;
+  phone: string;
+  email: string;
+  location: string;
+  projectType: string;
+  hasLand: string;
+  desiredArea: string;
+  message: string;
+};
+
+const emptyContactForm: ContactFormState = {
+  name: '',
+  phone: '',
+  email: '',
+  location: '',
+  projectType: '',
+  hasLand: '',
+  desiredArea: '',
+  message: '',
+};
 
 function normalizeGalleryImagesBySection(patch: ContentPatch, sectionCount: number) {
   if (Array.isArray(patch.galleryImagesUrlsBySection)) {
@@ -53,8 +76,14 @@ function normalizeGalleryImagesBySection(patch: ContentPatch, sectionCount: numb
 function App() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [contentPatch, setContentPatch] = useState<ContentPatch>({});
+  const [contactForm, setContactForm] =
+    useState<ContactFormState>(emptyContactForm);
+  const [contactStatusMessage, setContactStatusMessage] = useState('');
+  const [contactStatusType, setContactStatusType] =
+    useState<'success' | 'error' | ''>('');
+  const [isSubmittingContact, setIsSubmittingContact] = useState(false);
 
-  const isAdminPage = window.location.pathname === '/admin';
+  const isAdminPage = window.location.pathname.startsWith('/admin');
 
   useEffect(() => {
     if (isAdminPage) {
@@ -82,6 +111,58 @@ function App() {
   const whatsappMessage = encodeURIComponent(content.contact.whatsappMessage);
 
   const closeMenu = () => setMenuOpen(false);
+
+  function updateContactFormField<K extends keyof ContactFormState>(
+    field: K,
+    value: ContactFormState[K]
+  ) {
+    setContactForm((current) => ({
+      ...current,
+      [field]: value,
+    }));
+  }
+
+  async function handleContactSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    setContactStatusMessage('');
+    setContactStatusType('');
+
+    if (!contactForm.name.trim() || !contactForm.phone.trim()) {
+      setContactStatusType('error');
+      setContactStatusMessage('Por favor, indique pelo menos o nome e o telefone.');
+      return;
+    }
+
+    setIsSubmittingContact(true);
+
+    try {
+      await createCrmLead({
+        name: contactForm.name,
+        phone: contactForm.phone,
+        email: contactForm.email,
+        location: contactForm.location,
+        project_type: contactForm.projectType,
+        has_land: contactForm.hasLand,
+        desired_area: contactForm.desiredArea,
+        message: contactForm.message,
+        origin: 'website',
+      });
+
+      setContactForm(emptyContactForm);
+      setContactStatusType('success');
+      setContactStatusMessage(
+        'Pedido enviado com sucesso. Entraremos em contacto brevemente.'
+      );
+    } catch {
+      setContactStatusType('error');
+      setContactStatusMessage(
+        'Não foi possível enviar o pedido neste momento. Pode tentar novamente ou contactar por WhatsApp.'
+      );
+    } finally {
+      setIsSubmittingContact(false);
+    }
+  }
 
   if (isAdminPage) {
     return <AdminPanel />;
@@ -282,7 +363,10 @@ function App() {
                 const images = galleryImagesBySection[sectionIndex] || [];
 
                 return (
-                  <article className="gallery-section-card" key={`${item}-${sectionIndex}`}>
+                  <article
+                    className="gallery-section-card"
+                    key={`${item}-${sectionIndex}`}
+                  >
                     <div className="gallery-section-heading">
                       <div>
                         <span>Galeria</span>
@@ -373,16 +457,64 @@ function App() {
               </a>
             </div>
 
-            <form className="contact-form">
+            <form className="contact-form" onSubmit={handleContactSubmit}>
+              {contactStatusMessage && (
+                <div
+                  className={
+                    contactStatusType === 'success'
+                      ? 'contact-form-message contact-form-message-success'
+                      : 'contact-form-message contact-form-message-error'
+                  }
+                >
+                  {contactStatusMessage}
+                </div>
+              )}
+
               <div className="form-row">
-                <input type="text" placeholder="Nome" />
-                <input type="tel" placeholder="Telefone" />
+                <input
+                  type="text"
+                  placeholder="Nome"
+                  value={contactForm.name}
+                  onChange={(event) =>
+                    updateContactFormField('name', event.target.value)
+                  }
+                  required
+                />
+                <input
+                  type="tel"
+                  placeholder="Telefone"
+                  value={contactForm.phone}
+                  onChange={(event) =>
+                    updateContactFormField('phone', event.target.value)
+                  }
+                  required
+                />
               </div>
 
-              <input type="email" placeholder="Email" />
-              <input type="text" placeholder="Localidade do projeto" />
+              <input
+                type="email"
+                placeholder="Email"
+                value={contactForm.email}
+                onChange={(event) =>
+                  updateContactFormField('email', event.target.value)
+                }
+              />
 
-              <select defaultValue="">
+              <input
+                type="text"
+                placeholder="Localidade do projeto"
+                value={contactForm.location}
+                onChange={(event) =>
+                  updateContactFormField('location', event.target.value)
+                }
+              />
+
+              <select
+                value={contactForm.projectType}
+                onChange={(event) =>
+                  updateContactFormField('projectType', event.target.value)
+                }
+              >
                 <option value="" disabled>
                   Tipo de projeto
                 </option>
@@ -393,7 +525,12 @@ function App() {
                 <option>Projeto com ajustes</option>
               </select>
 
-              <select defaultValue="">
+              <select
+                value={contactForm.hasLand}
+                onChange={(event) =>
+                  updateContactFormField('hasLand', event.target.value)
+                }
+              >
                 <option value="" disabled>
                   Já tem terreno?
                 </option>
@@ -402,11 +539,29 @@ function App() {
                 <option>Quero apenas informações iniciais</option>
               </select>
 
-              <input type="text" placeholder="Área aproximada pretendida" />
+              <input
+                type="text"
+                placeholder="Área aproximada pretendida"
+                value={contactForm.desiredArea}
+                onChange={(event) =>
+                  updateContactFormField('desiredArea', event.target.value)
+                }
+              />
 
-              <textarea placeholder="Mensagem" rows={5}></textarea>
+              <textarea
+                placeholder="Mensagem"
+                rows={5}
+                value={contactForm.message}
+                onChange={(event) =>
+                  updateContactFormField('message', event.target.value)
+                }
+              />
 
-              <button type="submit">Enviar pedido de orçamento</button>
+              <button type="submit" disabled={isSubmittingContact}>
+                {isSubmittingContact
+                  ? 'A enviar...'
+                  : 'Enviar pedido de orçamento'}
+              </button>
 
               <small>{content.contactSection.formNote}</small>
             </form>
