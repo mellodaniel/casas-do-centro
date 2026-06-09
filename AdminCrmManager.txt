@@ -62,51 +62,6 @@ type FollowUpForm = {
   next_action_date: string;
 };
 
-type CommercialView =
-  | 'todos'
-  | 'leads_ativos'
-  | 'followups_pendentes'
-  | 'clientes_fechados'
-  | 'pedidos_executados'
-  | 'perdidos';
-
-const commercialViewOptions: Array<{
-  value: CommercialView;
-  label: string;
-  description: string;
-}> = [
-  {
-    value: 'todos',
-    label: 'Todos',
-    description: 'Todos os contactos registados',
-  },
-  {
-    value: 'leads_ativos',
-    label: 'Leads ativos',
-    description: 'Contactos ainda em acompanhamento comercial',
-  },
-  {
-    value: 'followups_pendentes',
-    label: 'Follow-ups pendentes',
-    description: 'Contactos com próxima ação agendada',
-  },
-  {
-    value: 'clientes_fechados',
-    label: 'Clientes fechados',
-    description: 'Clientes que já fecharam negócio',
-  },
-  {
-    value: 'pedidos_executados',
-    label: 'Pedidos executados',
-    description: 'Pedidos já concluídos',
-  },
-  {
-    value: 'perdidos',
-    label: 'Perdidos',
-    description: 'Contactos que não avançaram',
-  },
-];
-
 const emptyLeadForm: NewLeadForm = {
   name: '',
   phone: '',
@@ -207,51 +162,6 @@ function hasFutureFollowUp(lead: CrmLead) {
   return new Date(lead.next_follow_up_at).getTime() >= Date.now();
 }
 
-function isLeadClosed(lead: CrmLead) {
-  return lead.status === 'cliente_fechado' || lead.status === 'fechado';
-}
-
-function isLeadActive(lead: CrmLead) {
-  return (
-    lead.status === 'novo' ||
-    lead.status === 'em_contacto' ||
-    lead.status === 'orcamento_enviado' ||
-    lead.status === 'em_negociacao'
-  );
-}
-
-function hasPendingFollowUp(lead: CrmLead) {
-  return Boolean(lead.next_follow_up_at) && isLeadActive(lead);
-}
-
-function leadMatchesCommercialView(lead: CrmLead, view: CommercialView) {
-  if (view === 'todos') {
-    return true;
-  }
-
-  if (view === 'leads_ativos') {
-    return isLeadActive(lead);
-  }
-
-  if (view === 'followups_pendentes') {
-    return hasPendingFollowUp(lead);
-  }
-
-  if (view === 'clientes_fechados') {
-    return isLeadClosed(lead);
-  }
-
-  if (view === 'pedidos_executados') {
-    return lead.status === 'pedido_executado';
-  }
-
-  if (view === 'perdidos') {
-    return lead.status === 'perdido';
-  }
-
-  return true;
-}
-
 export function AdminCrmManager() {
   const [leads, setLeads] = useState<CrmLead[]>([]);
   const [followUpsByLeadId, setFollowUpsByLeadId] = useState<
@@ -266,7 +176,6 @@ export function AdminCrmManager() {
     null
   );
   const [statusFilter, setStatusFilter] = useState<LeadStatus | 'todos'>('todos');
-  const [commercialView, setCommercialView] = useState<CommercialView>('todos');
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [form, setForm] = useState<NewLeadForm>(emptyLeadForm);
@@ -279,10 +188,8 @@ export function AdminCrmManager() {
   const [statusType, setStatusType] = useState<'success' | 'warning' | 'info'>('info');
 
   const filteredLeads = useMemo(() => {
-    return leads
-      .filter((lead) => leadMatchesCommercialView(lead, commercialView))
-      .filter((lead) => leadMatchesSearch(lead, searchTerm));
-  }, [commercialView, leads, searchTerm]);
+    return leads.filter((lead) => leadMatchesSearch(lead, searchTerm));
+  }, [leads, searchTerm]);
 
   const totalPages = Math.max(1, Math.ceil(filteredLeads.length / PAGE_SIZE));
 
@@ -327,44 +234,6 @@ export function AdminCrmManager() {
         atrasados: 0,
         agendados: 0,
       } as Record<LeadStatus | 'total' | 'atrasados' | 'agendados', number>
-    );
-  }, [leads]);
-
-  const commercialViewCounters = useMemo(() => {
-    return leads.reduce(
-      (acc, lead) => {
-        acc.todos += 1;
-
-        if (isLeadActive(lead)) {
-          acc.leads_ativos += 1;
-        }
-
-        if (hasPendingFollowUp(lead)) {
-          acc.followups_pendentes += 1;
-        }
-
-        if (isLeadClosed(lead)) {
-          acc.clientes_fechados += 1;
-        }
-
-        if (lead.status === 'pedido_executado') {
-          acc.pedidos_executados += 1;
-        }
-
-        if (lead.status === 'perdido') {
-          acc.perdidos += 1;
-        }
-
-        return acc;
-      },
-      {
-        todos: 0,
-        leads_ativos: 0,
-        followups_pendentes: 0,
-        clientes_fechados: 0,
-        pedidos_executados: 0,
-        perdidos: 0,
-      } as Record<CommercialView, number>
     );
   }, [leads]);
 
@@ -456,23 +325,9 @@ export function AdminCrmManager() {
     }));
   }
 
-  async function handleCommercialViewChange(value: CommercialView) {
-    setCommercialView(value);
-    setCurrentPage(1);
-    setExpandedLeadId(null);
-    setVisibleStatusHistoryLeadId(null);
-
-    if (statusFilter !== 'todos') {
-      setStatusFilter('todos');
-      await loadLeads('todos');
-    }
-  }
-
   async function handleFilterChange(value: LeadStatus | 'todos') {
     setStatusFilter(value);
     setCurrentPage(1);
-    setExpandedLeadId(null);
-    setVisibleStatusHistoryLeadId(null);
     await loadLeads(value);
   }
 
@@ -691,36 +546,6 @@ export function AdminCrmManager() {
       <div className="admin-crm-form">
         <div className="admin-users-form-heading">
           <div>
-            <strong>Visão comercial</strong>
-            <p>
-              Acompanhe os contactos por fase do processo comercial e identifique rapidamente oportunidades, follow-ups pendentes, clientes fechados e pedidos executados.
-            </p>
-          </div>
-        </div>
-
-        <div className="admin-crm-actions">
-          {commercialViewOptions.map((option) => (
-            <button
-              key={option.value}
-              type="button"
-              className={
-                commercialView === option.value
-                  ? 'admin-save-button'
-                  : 'admin-secondary-button'
-              }
-              onClick={() => handleCommercialViewChange(option.value)}
-              title={option.description}
-            >
-              {option.label}
-              <span>{commercialViewCounters[option.value]}</span>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="admin-crm-form">
-        <div className="admin-users-form-heading">
-          <div>
             <strong>Novo pedido manual</strong>
             <p>
               Regista manualmente um contacto recebido por telefone, WhatsApp ou
@@ -840,9 +665,8 @@ export function AdminCrmManager() {
         <div>
           <strong>Pedidos existentes</strong>
           <p>
-            Lista de contactos e oportunidades comerciais filtrada pela visão
-            comercial selecionada. Cada pedido pode ser aberto para ver detalhes,
-            histórico e follow-ups.
+            Lista de contactos e oportunidades comerciais. Cada pedido pode ser
+            aberto para ver detalhes, histórico e follow-ups.
           </p>
         </div>
 
@@ -883,7 +707,7 @@ export function AdminCrmManager() {
 
       <div className="admin-crm-pagination-info">
         <span>
-          A mostrar {paginatedLeads.length} de {filteredLeads.length} contactos nesta visão
+          A mostrar {paginatedLeads.length} de {filteredLeads.length} contactos
         </span>
         <span>
           Página {Math.min(currentPage, totalPages)} de {totalPages}
@@ -894,7 +718,7 @@ export function AdminCrmManager() {
         <div className="admin-empty-state">A carregar pedidos...</div>
       ) : filteredLeads.length === 0 ? (
         <div className="admin-empty-state">
-          Não existem contactos para esta visão, filtro ou pesquisa.
+          Não existem contactos para este filtro ou pesquisa.
         </div>
       ) : (
         <>
