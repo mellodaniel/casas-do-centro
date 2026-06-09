@@ -10,6 +10,7 @@ import {
   Images,
   CheckCircle,
   HelpCircle,
+  ArrowRight,
 } from 'lucide-react';
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import './index.css';
@@ -43,7 +44,18 @@ type DistrictCountyOption = {
   counties: string[];
 };
 
+type PublicPage = 'home' | 'galeria' | 'duvidas' | 'contacto';
+
 const INSTAGRAM_URL = 'https://www.instagram.com/casasdocentro/';
+
+const publicNavigation: Array<{ label: string; href: string }> = [
+  { label: 'Início', href: '/' },
+  { label: 'Modelos', href: '/#modelos' },
+  { label: 'Vantagens', href: '/#vantagens' },
+  { label: 'Galeria', href: '/galeria' },
+  { label: 'Dúvidas', href: '/duvidas' },
+  { label: 'Contacto', href: '/contacto' },
+];
 
 const emptyContactForm: ContactFormState = {
   firstName: '',
@@ -375,6 +387,24 @@ function formatLocationForStorage(district: string, county: string) {
   return district || county;
 }
 
+function getCurrentPublicPage(): PublicPage {
+  const pathname = window.location.pathname;
+
+  if (pathname.startsWith('/galeria')) {
+    return 'galeria';
+  }
+
+  if (pathname.startsWith('/duvidas')) {
+    return 'duvidas';
+  }
+
+  if (pathname.startsWith('/contacto')) {
+    return 'contacto';
+  }
+
+  return 'home';
+}
+
 function App() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [contentPatch, setContentPatch] = useState<ContentPatch>({});
@@ -386,6 +416,7 @@ function App() {
   const [isSubmittingContact, setIsSubmittingContact] = useState(false);
 
   const isAdminPage = window.location.pathname.startsWith('/admin');
+  const currentPage = getCurrentPublicPage();
 
   useEffect(() => {
     if (isAdminPage) {
@@ -417,6 +448,11 @@ function App() {
   const phoneRule = countryPhoneRules[contactForm.countryCode];
 
   const whatsappMessage = encodeURIComponent(content.contact.whatsappMessage);
+
+  const galleryPreviewItems = content.gallery.items.slice(0, 4);
+  const faqPreviewItems = content.faq.items.slice(0, 3);
+  const processPreviewSteps = content.process.steps.slice(0, 3);
+  const benefitsPreview = content.benefits.slice(0, 4);
 
   const closeMenu = () => setMenuOpen(false);
 
@@ -517,41 +553,287 @@ function App() {
     }
   }
 
-  if (isAdminPage) {
-    return <AdminPanel />;
+  function renderGalleryBlock(isFullPage = false) {
+    const itemsToRender = isFullPage ? content.gallery.items : galleryPreviewItems;
+
+    return (
+      <div className="gallery-sections-grid">
+        {itemsToRender.map((item, sectionIndex) => {
+          const originalIndex = content.gallery.items.indexOf(item);
+          const images = galleryImagesBySection[originalIndex] || [];
+
+          return (
+            <article
+              className="gallery-section-card"
+              key={`${item}-${sectionIndex}`}
+            >
+              <div className="gallery-section-heading">
+                <div>
+                  <span>Galeria</span>
+                  <h3>{item}</h3>
+                </div>
+
+                {images.length > 0 && (
+                  <small>
+                    {images.length} {images.length === 1 ? 'foto' : 'fotos'}
+                  </small>
+                )}
+              </div>
+
+              {images.length > 0 ? (
+                <div className={`gallery-photo-grid photos-${images.length}`}>
+                  {images.map((image, imageIndex) => (
+                    <a
+                      className="gallery-photo"
+                      key={`${item}-${imageIndex}`}
+                      style={{ backgroundImage: `url(${image})` }}
+                      aria-label={`${item} ${imageIndex + 1}`}
+                      href={image}
+                      target="_blank"
+                      rel="noreferrer"
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="gallery-empty-state">
+                  <Images size={32} />
+                  <strong>{item}</strong>
+                  <span>Imagens a adicionar brevemente</span>
+                </div>
+              )}
+            </article>
+          );
+        })}
+      </div>
+    );
   }
 
-  return (
-    <div className="site">
-      <header className="header">
-        <div className="container header-content">
-          <a href="#inicio" className="logo-area" onClick={closeMenu}>
-            <img src={logo} alt={content.company.name} />
-          </a>
+  function renderContactBlock() {
+    return (
+      <div className="container contact-grid">
+        <div>
+          <span className="section-label">{content.contactSection.label}</span>
+          <h2>{content.contactSection.title}</h2>
+          <p>{content.contactSection.description}</p>
 
-          <button
-            className="menu-button"
-            onClick={() => setMenuOpen(!menuOpen)}
-            aria-label="Abrir menu"
+          <div className="contact-info">
+            <p>
+              <Phone size={18} /> {content.contact.phone}
+            </p>
+            <p>
+              <Mail size={18} /> {content.contact.email}
+            </p>
+            <p>
+              <MapPin size={18} /> {content.contact.location}
+            </p>
+          </div>
+
+          <div className="contact-action-list">
+            <a
+              className="whatsapp-link"
+              href={`https://wa.me/${content.contact.whatsappNumber}?text=${whatsappMessage}`}
+              target="_blank"
+              rel="noreferrer"
+            >
+              <MessageCircle size={22} />
+              Falar pelo WhatsApp
+            </a>
+
+            <a
+              className="whatsapp-link instagram-contact-link"
+              href={INSTAGRAM_URL}
+              target="_blank"
+              rel="noreferrer"
+            >
+              <Instagram size={22} />
+              Seguir no Instagram
+            </a>
+          </div>
+
+          <div className="contact-next-step">
+            <strong>O que acontece depois?</strong>
+            <span>
+              Após o envio do pedido, analisamos a informação recebida e entramos
+              em contacto para perceber melhor o tipo de casa, localização,
+              objetivo e próximos passos.
+            </span>
+          </div>
+        </div>
+
+        <form className="contact-form" onSubmit={handleContactSubmit}>
+          {contactStatusMessage && (
+            <div
+              className={
+                contactStatusType === 'success'
+                  ? 'contact-form-message contact-form-message-success'
+                  : 'contact-form-message contact-form-message-error'
+              }
+            >
+              {contactStatusMessage}
+            </div>
+          )}
+
+          <div className="form-row">
+            <input
+              type="text"
+              placeholder="Nome"
+              value={contactForm.firstName}
+              onChange={(event) =>
+                updateContactFormField('firstName', event.target.value)
+              }
+              required
+            />
+
+            <input
+              type="text"
+              placeholder="Apelido"
+              value={contactForm.lastName}
+              onChange={(event) =>
+                updateContactFormField('lastName', event.target.value)
+              }
+              required
+            />
+          </div>
+
+          <div className="form-row">
+            <select
+              value={contactForm.countryCode}
+              onChange={(event) =>
+                updateContactFormField('countryCode', event.target.value)
+              }
+            >
+              {Object.entries(countryPhoneRules).map(([code, rule]) => (
+                <option key={code} value={code}>
+                  {code} — {rule.label}
+                </option>
+              ))}
+            </select>
+
+            <input
+              type="tel"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              placeholder={
+                phoneRule ? `Telefone. Ex: ${phoneRule.example}` : 'Telefone'
+              }
+              value={contactForm.phone}
+              onChange={(event) =>
+                updateContactFormField(
+                  'phone',
+                  event.target.value.replace(/\D/g, '')
+                )
+              }
+              required
+            />
+          </div>
+
+          <input
+            type="email"
+            placeholder="Email. Ex: nome@email.com"
+            value={contactForm.email}
+            onChange={(event) =>
+              updateContactFormField('email', event.target.value)
+            }
+          />
+
+          <div className="form-row">
+            <select
+              value={contactForm.district}
+              onChange={(event) =>
+                updateContactFormField('district', event.target.value)
+              }
+              required
+            >
+              <option value="" disabled>
+                Distrito
+              </option>
+              {centerPortugalLocations.map((item) => (
+                <option key={item.district} value={item.district}>
+                  {item.district}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={contactForm.county}
+              onChange={(event) =>
+                updateContactFormField('county', event.target.value)
+              }
+              required
+              disabled={!contactForm.district}
+            >
+              <option value="" disabled>
+                Concelho
+              </option>
+              {selectedDistrict?.counties.map((county) => (
+                <option key={county} value={county}>
+                  {county}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <select
+            value={contactForm.projectType}
+            onChange={(event) =>
+              updateContactFormField('projectType', event.target.value)
+            }
           >
-            {menuOpen ? <X size={28} /> : <Menu size={28} />}
+            <option value="" disabled>
+              Tipo de projeto
+            </option>
+            <option>Habitação permanente</option>
+            <option>Casa de férias</option>
+            <option>Turismo rural / alojamento local</option>
+            <option>Bungalow ou anexo</option>
+            <option>Projeto com ajustes</option>
+          </select>
+
+          <select
+            value={contactForm.hasLand}
+            onChange={(event) =>
+              updateContactFormField('hasLand', event.target.value)
+            }
+          >
+            <option value="" disabled>
+              Já tem terreno?
+            </option>
+            <option>Sim, já tenho terreno</option>
+            <option>Ainda estou à procura</option>
+            <option>Quero apenas informações iniciais</option>
+          </select>
+
+          <input
+            type="text"
+            placeholder="Área aproximada pretendida. Ex: 80 m²"
+            value={contactForm.desiredArea}
+            onChange={(event) =>
+              updateContactFormField('desiredArea', event.target.value)
+            }
+          />
+
+          <textarea
+            placeholder="Mensagem"
+            rows={5}
+            value={contactForm.message}
+            onChange={(event) =>
+              updateContactFormField('message', event.target.value)
+            }
+          />
+
+          <button type="submit" disabled={isSubmittingContact}>
+            {isSubmittingContact ? 'A enviar...' : 'Enviar pedido de orçamento'}
           </button>
 
-          <nav className={`nav ${menuOpen ? 'open' : ''}`}>
-            {content.navigation.map((item) => (
-              <a key={item.href} href={item.href} onClick={closeMenu}>
-                {item.label}
-              </a>
-            ))}
+          <small>{content.contactSection.formNote}</small>
+        </form>
+      </div>
+    );
+  }
 
-            <a href="#contacto" className="nav-cta" onClick={closeMenu}>
-              Pedir orçamento
-            </a>
-          </nav>
-        </div>
-      </header>
-
-      <main>
+  function renderHomePage() {
+    return (
+      <>
         <section id="inicio" className="hero">
           <div className="container hero-content">
             <div className="hero-text">
@@ -564,7 +846,7 @@ function App() {
               <p>{content.hero.description}</p>
 
               <div className="hero-actions">
-                <a href="#contacto" className="btn primary">
+                <a href="/contacto" className="btn primary">
                   {content.hero.primaryButton}
                 </a>
                 <a href="#modelos" className="btn secondary">
@@ -601,7 +883,7 @@ function App() {
           </div>
         </section>
 
-        <section id="sobre" className="section">
+        <section id="sobre" className="section compact-section">
           <div className="container two-columns">
             <div>
               <span className="section-label">{content.about.label}</span>
@@ -609,19 +891,20 @@ function App() {
             </div>
 
             <div className="text-block">
-              {content.about.paragraphs.map((paragraph) => (
-                <p key={paragraph}>{paragraph}</p>
-              ))}
+              <p>{content.about.paragraphs[0]}</p>
+              <p>{content.about.paragraphs[1]}</p>
             </div>
           </div>
         </section>
 
-        <section id="modelos" className="section soft-bg">
+        <section id="modelos" className="section soft-bg compact-section">
           <div className="container">
-            <div className="section-heading">
-              <span className="section-label">{content.modelsSection.label}</span>
-              <h2>{content.modelsSection.title}</h2>
-              <p>{content.modelsSection.description}</p>
+            <div className="section-heading section-heading-with-action">
+              <div>
+                <span className="section-label">{content.modelsSection.label}</span>
+                <h2>{content.modelsSection.title}</h2>
+                <p>{content.modelsSection.description}</p>
+              </div>
             </div>
 
             <div className="cards-grid">
@@ -640,7 +923,7 @@ function App() {
           </div>
         </section>
 
-        <section id="vantagens" className="section">
+        <section id="vantagens" className="section compact-section">
           <div className="container">
             <div className="section-heading">
               <span className="section-label">{content.benefitsSection.label}</span>
@@ -648,8 +931,8 @@ function App() {
               <p>{content.benefitsSection.description}</p>
             </div>
 
-            <div className="benefits-grid">
-              {content.benefits.map((benefit) => {
+            <div className="benefits-grid benefits-grid-compact">
+              {benefitsPreview.map((benefit) => {
                 const Icon = benefit.icon;
 
                 return (
@@ -666,34 +949,15 @@ function App() {
           </div>
         </section>
 
-        <section className="section ideal-section">
-          <div className="container ideal-content">
-            <div>
-              <span className="section-label light">{content.ideal.label}</span>
-              <h2>{content.ideal.title}</h2>
-              <p>{content.ideal.description}</p>
-            </div>
-
-            <div className="ideal-list">
-              {content.ideal.items.map((item) => (
-                <span key={item}>
-                  <CheckCircle size={18} />
-                  {item}
-                </span>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="section process-section">
+        <section className="section process-section compact-section">
           <div className="container">
             <div className="section-heading">
               <span className="section-label light">{content.process.label}</span>
               <h2>{content.process.title}</h2>
             </div>
 
-            <div className="process-grid">
-              {content.process.steps.map((step) => (
+            <div className="process-grid process-grid-compact">
+              {processPreviewSteps.map((step) => (
                 <div className="process-card" key={step.number}>
                   <span>{step.number}</span>
                   <h3>{step.title}</h3>
@@ -704,67 +968,130 @@ function App() {
           </div>
         </section>
 
-        <section id="galeria" className="section soft-bg">
+        <section id="galeria" className="section soft-bg compact-section">
           <div className="container">
-            <div className="section-heading">
-              <span className="section-label">{content.gallery.label}</span>
-              <h2>{content.gallery.title}</h2>
-              <p>{content.gallery.description}</p>
+            <div className="section-heading section-heading-with-action">
+              <div>
+                <span className="section-label">{content.gallery.label}</span>
+                <h2>{content.gallery.title}</h2>
+                <p>{content.gallery.description}</p>
+              </div>
+
+              <a href="/galeria" className="section-action-link">
+                Ver galeria completa <ArrowRight size={18} />
+              </a>
             </div>
 
-            <div className="gallery-sections-grid">
-              {content.gallery.items.map((item, sectionIndex) => {
-                const images = galleryImagesBySection[sectionIndex] || [];
-
-                return (
-                  <article
-                    className="gallery-section-card"
-                    key={`${item}-${sectionIndex}`}
-                  >
-                    <div className="gallery-section-heading">
-                      <div>
-                        <span>Galeria</span>
-                        <h3>{item}</h3>
-                      </div>
-
-                      {images.length > 0 && (
-                        <small>
-                          {images.length} {images.length === 1 ? 'foto' : 'fotos'}
-                        </small>
-                      )}
-                    </div>
-
-                    {images.length > 0 ? (
-                      <div className={`gallery-photo-grid photos-${images.length}`}>
-                        {images.map((image, imageIndex) => (
-                          <div
-                            className="gallery-photo"
-                            key={`${item}-${imageIndex}`}
-                            style={{ backgroundImage: `url(${image})` }}
-                            aria-label={`${item} ${imageIndex + 1}`}
-                          />
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="gallery-empty-state">
-                        <Images size={32} />
-                        <strong>{item}</strong>
-                        <span>Imagens a adicionar brevemente</span>
-                      </div>
-                    )}
-                  </article>
-                );
-              })}
-            </div>
+            {renderGalleryBlock(false)}
           </div>
         </section>
 
-        <section id="faq" className="section">
+        <section id="faq" className="section compact-section">
           <div className="container faq-layout">
             <div>
               <span className="section-label">{content.faq.label}</span>
               <h2>{content.faq.title}</h2>
               <p>{content.faq.description}</p>
+
+              <a href="/duvidas" className="section-action-link inline-action">
+                Ver todas as dúvidas <ArrowRight size={18} />
+              </a>
+            </div>
+
+            <div className="faq-list">
+              {faqPreviewItems.map((faq) => (
+                <details key={faq.question} className="faq-item">
+                  <summary>
+                    <HelpCircle size={20} />
+                    {faq.question}
+                  </summary>
+                  <p>{faq.answer}</p>
+                </details>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="section home-final-cta">
+          <div className="container home-final-cta-card">
+            <div>
+              <span className="section-label light">Próximo passo</span>
+              <h2>Quer avaliar uma solução para o seu terreno ou projeto?</h2>
+              <p>
+                Envie o pedido e receba um contacto para analisar modelo, área,
+                localização e possibilidades disponíveis.
+              </p>
+            </div>
+
+            <a href="/contacto" className="btn primary">
+              Pedir orçamento
+            </a>
+          </div>
+        </section>
+      </>
+    );
+  }
+
+  function renderGalleryPage() {
+    return (
+      <>
+        <section className="page-hero">
+          <div className="container page-hero-content">
+            <span className="section-label">{content.gallery.label}</span>
+            <h1>{content.gallery.title}</h1>
+            <p>{content.gallery.description}</p>
+          </div>
+        </section>
+
+        <section className="section soft-bg">
+          <div className="container">
+            {renderGalleryBlock(true)}
+          </div>
+        </section>
+
+        <section className="section home-final-cta">
+          <div className="container home-final-cta-card">
+            <div>
+              <span className="section-label light">Gostou do que viu?</span>
+              <h2>Peça uma proposta personalizada.</h2>
+              <p>
+                Partilhe connosco o tipo de casa, localização e objetivo do
+                projeto para avaliarmos a solução mais adequada.
+              </p>
+            </div>
+
+            <a href="/contacto" className="btn primary">
+              Pedir orçamento
+            </a>
+          </div>
+        </section>
+      </>
+    );
+  }
+
+  function renderFaqPage() {
+    return (
+      <>
+        <section className="page-hero">
+          <div className="container page-hero-content">
+            <span className="section-label">{content.faq.label}</span>
+            <h1>{content.faq.title}</h1>
+            <p>{content.faq.description}</p>
+          </div>
+        </section>
+
+        <section className="section">
+          <div className="container faq-page-layout">
+            <div className="faq-page-intro">
+              <h2>Informação clara antes de avançar.</h2>
+              <p>
+                Reunimos aqui as perguntas mais comuns sobre casas de madeira,
+                licenciamento, modelos, ajustes e pedido de orçamento.
+              </p>
+
+              <a href="/contacto" className="section-action-link inline-action">
+                Falar connosco <ArrowRight size={18} />
+              </a>
             </div>
 
             <div className="faq-list">
@@ -780,221 +1107,79 @@ function App() {
             </div>
           </div>
         </section>
+      </>
+    );
+  }
 
-        <section id="contacto" className="section contact-section">
-          <div className="container contact-grid">
-            <div>
-              <span className="section-label">{content.contactSection.label}</span>
-              <h2>{content.contactSection.title}</h2>
-              <p>{content.contactSection.description}</p>
-
-              <div className="contact-info">
-                <p>
-                  <Phone size={18} /> {content.contact.phone}
-                </p>
-                <p>
-                  <Mail size={18} /> {content.contact.email}
-                </p>
-                <p>
-                  <MapPin size={18} /> {content.contact.location}
-                </p>
-              </div>
-
-              <a
-                className="whatsapp-link"
-                href={`https://wa.me/${content.contact.whatsappNumber}?text=${whatsappMessage}`}
-                target="_blank"
-                rel="noreferrer"
-              >
-                <MessageCircle size={22} />
-                Falar pelo WhatsApp
-              </a>
-
-              <a
-                className="whatsapp-link"
-                href={INSTAGRAM_URL}
-                target="_blank"
-                rel="noreferrer"
-              >
-                <Instagram size={22} />
-                Seguir no Instagram
-              </a>
-            </div>
-
-            <form className="contact-form" onSubmit={handleContactSubmit}>
-              {contactStatusMessage && (
-                <div
-                  className={
-                    contactStatusType === 'success'
-                      ? 'contact-form-message contact-form-message-success'
-                      : 'contact-form-message contact-form-message-error'
-                  }
-                >
-                  {contactStatusMessage}
-                </div>
-              )}
-
-              <div className="form-row">
-                <input
-                  type="text"
-                  placeholder="Nome"
-                  value={contactForm.firstName}
-                  onChange={(event) =>
-                    updateContactFormField('firstName', event.target.value)
-                  }
-                  required
-                />
-
-                <input
-                  type="text"
-                  placeholder="Apelido"
-                  value={contactForm.lastName}
-                  onChange={(event) =>
-                    updateContactFormField('lastName', event.target.value)
-                  }
-                  required
-                />
-              </div>
-
-              <div className="form-row">
-                <select
-                  value={contactForm.countryCode}
-                  onChange={(event) =>
-                    updateContactFormField('countryCode', event.target.value)
-                  }
-                >
-                  {Object.entries(countryPhoneRules).map(([code, rule]) => (
-                    <option key={code} value={code}>
-                      {code} — {rule.label}
-                    </option>
-                  ))}
-                </select>
-
-                <input
-                  type="tel"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  placeholder={
-                    phoneRule
-                      ? `Telefone. Ex: ${phoneRule.example}`
-                      : 'Telefone'
-                  }
-                  value={contactForm.phone}
-                  onChange={(event) =>
-                    updateContactFormField(
-                      'phone',
-                      event.target.value.replace(/\D/g, '')
-                    )
-                  }
-                  required
-                />
-              </div>
-
-              <input
-                type="email"
-                placeholder="Email. Ex: nome@email.com"
-                value={contactForm.email}
-                onChange={(event) =>
-                  updateContactFormField('email', event.target.value)
-                }
-              />
-
-              <div className="form-row">
-                <select
-                  value={contactForm.district}
-                  onChange={(event) =>
-                    updateContactFormField('district', event.target.value)
-                  }
-                  required
-                >
-                  <option value="" disabled>
-                    Distrito
-                  </option>
-                  {centerPortugalLocations.map((item) => (
-                    <option key={item.district} value={item.district}>
-                      {item.district}
-                    </option>
-                  ))}
-                </select>
-
-                <select
-                  value={contactForm.county}
-                  onChange={(event) =>
-                    updateContactFormField('county', event.target.value)
-                  }
-                  required
-                  disabled={!contactForm.district}
-                >
-                  <option value="" disabled>
-                    Concelho
-                  </option>
-                  {selectedDistrict?.counties.map((county) => (
-                    <option key={county} value={county}>
-                      {county}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <select
-                value={contactForm.projectType}
-                onChange={(event) =>
-                  updateContactFormField('projectType', event.target.value)
-                }
-              >
-                <option value="" disabled>
-                  Tipo de projeto
-                </option>
-                <option>Habitação permanente</option>
-                <option>Casa de férias</option>
-                <option>Turismo rural / alojamento local</option>
-                <option>Bungalow ou anexo</option>
-                <option>Projeto com ajustes</option>
-              </select>
-
-              <select
-                value={contactForm.hasLand}
-                onChange={(event) =>
-                  updateContactFormField('hasLand', event.target.value)
-                }
-              >
-                <option value="" disabled>
-                  Já tem terreno?
-                </option>
-                <option>Sim, já tenho terreno</option>
-                <option>Ainda estou à procura</option>
-                <option>Quero apenas informações iniciais</option>
-              </select>
-
-              <input
-                type="text"
-                placeholder="Área aproximada pretendida. Ex: 80 m²"
-                value={contactForm.desiredArea}
-                onChange={(event) =>
-                  updateContactFormField('desiredArea', event.target.value)
-                }
-              />
-
-              <textarea
-                placeholder="Mensagem"
-                rows={5}
-                value={contactForm.message}
-                onChange={(event) =>
-                  updateContactFormField('message', event.target.value)
-                }
-              />
-
-              <button type="submit" disabled={isSubmittingContact}>
-                {isSubmittingContact
-                  ? 'A enviar...'
-                  : 'Enviar pedido de orçamento'}
-              </button>
-
-              <small>{content.contactSection.formNote}</small>
-            </form>
+  function renderContactPage() {
+    return (
+      <>
+        <section className="page-hero contact-page-hero">
+          <div className="container page-hero-content">
+            <span className="section-label">{content.contactSection.label}</span>
+            <h1>{content.contactSection.title}</h1>
+            <p>{content.contactSection.description}</p>
           </div>
         </section>
-      </main>
+
+        <section id="contacto" className="section contact-section">
+          {renderContactBlock()}
+        </section>
+      </>
+    );
+  }
+
+  function renderPublicPage() {
+    if (currentPage === 'galeria') {
+      return renderGalleryPage();
+    }
+
+    if (currentPage === 'duvidas') {
+      return renderFaqPage();
+    }
+
+    if (currentPage === 'contacto') {
+      return renderContactPage();
+    }
+
+    return renderHomePage();
+  }
+
+  if (isAdminPage) {
+    return <AdminPanel />;
+  }
+
+  return (
+    <div className="site">
+      <header className="header">
+        <div className="container header-content">
+          <a href="/" className="logo-area" onClick={closeMenu}>
+            <img src={logo} alt={content.company.name} />
+          </a>
+
+          <button
+            className="menu-button"
+            onClick={() => setMenuOpen(!menuOpen)}
+            aria-label="Abrir menu"
+          >
+            {menuOpen ? <X size={28} /> : <Menu size={28} />}
+          </button>
+
+          <nav className={`nav ${menuOpen ? 'open' : ''}`}>
+            {publicNavigation.map((item) => (
+              <a key={item.href} href={item.href} onClick={closeMenu}>
+                {item.label}
+              </a>
+            ))}
+
+            <a href="/contacto" className="nav-cta" onClick={closeMenu}>
+              Pedir orçamento
+            </a>
+          </nav>
+        </div>
+      </header>
+
+      <main>{renderPublicPage()}</main>
 
       <footer className="footer">
         <div className="container footer-content">
@@ -1002,7 +1187,7 @@ function App() {
           <p>{content.company.slogan}</p>
 
           <div className="footer-links">
-            {content.navigation.map((item) => (
+            {publicNavigation.map((item) => (
               <a key={item.href} href={item.href}>
                 {item.label}
               </a>
