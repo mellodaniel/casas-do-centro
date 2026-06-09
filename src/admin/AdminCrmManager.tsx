@@ -14,10 +14,15 @@ import {
   Clock,
   ChevronLeft,
   ChevronRight,
+  CalendarDays,
+  AlertCircle,
+  History,
+  ArrowRightLeft,
 } from 'lucide-react';
 import {
   createCrmFollowUp,
   createCrmLead,
+  createCrmStatusHistory,
   followUpContactTypeLabels,
   followUpContactTypeOptions,
   leadOriginLabels,
@@ -25,9 +30,11 @@ import {
   leadStatusOptions,
   listCrmFollowUps,
   listCrmLeads,
+  listCrmStatusHistory,
   updateCrmLead,
   type CrmFollowUp,
   type CrmLead,
+  type CrmStatusHistory,
   type FollowUpContactType,
   type LeadStatus,
 } from '../lib/crmService';
@@ -51,6 +58,7 @@ type FollowUpForm = {
   contact_type: FollowUpContactType;
   note: string;
   next_action: string;
+  next_action_date: string;
 };
 
 const emptyLeadForm: NewLeadForm = {
@@ -68,6 +76,7 @@ const emptyFollowUpForm: FollowUpForm = {
   contact_type: 'nota',
   note: '',
   next_action: '',
+  next_action_date: '',
 };
 
 const PAGE_SIZE = 8;
@@ -76,6 +85,12 @@ function formatDate(value: string) {
   return new Intl.DateTimeFormat('pt-PT', {
     dateStyle: 'short',
     timeStyle: 'short',
+  }).format(new Date(value));
+}
+
+function formatDateOnly(value: string) {
+  return new Intl.DateTimeFormat('pt-PT', {
+    dateStyle: 'short',
   }).format(new Date(value));
 }
 
@@ -113,11 +128,49 @@ function leadMatchesSearch(lead: CrmLead, searchValue: string) {
   return searchableText.includes(normalizedSearch);
 }
 
+function toIsoDateTimeLocal(value: string) {
+  if (!value) {
+    return null;
+  }
+
+  return new Date(value).toISOString();
+}
+
+function isFollowUpOverdue(lead: CrmLead) {
+  if (!lead.next_follow_up_at) {
+    return false;
+  }
+
+  if (
+    lead.status === 'pedido_executado' ||
+    lead.status === 'perdido' ||
+    lead.status === 'cliente_fechado' ||
+    lead.status === 'fechado'
+  ) {
+    return false;
+  }
+
+  return new Date(lead.next_follow_up_at).getTime() < Date.now();
+}
+
+function hasFutureFollowUp(lead: CrmLead) {
+  if (!lead.next_follow_up_at) {
+    return false;
+  }
+
+  return new Date(lead.next_follow_up_at).getTime() >= Date.now();
+}
+
 export function AdminCrmManager() {
   const [leads, setLeads] = useState<CrmLead[]>([]);
   const [followUpsByLeadId, setFollowUpsByLeadId] = useState<
     Record<string, CrmFollowUp[]>
   >({});
+  const [statusHistoryByLeadId, setStatusHistoryByLeadId] = useState<
+    Record<string, CrmStatusHistory[]>
+  >({});
+  const [visibleStatusHistoryLeadId, setVisibleStatusHistoryLeadId] =
+    useState<string | null>(null);
   const [currentProfile, setCurrentProfile] = useState<CurrentAdminProfile | null>(
     null
   );
@@ -149,7 +202,21 @@ export function AdminCrmManager() {
     return leads.reduce(
       (acc, lead) => {
         acc.total += 1;
-        acc[lead.status] += 1;
+
+        if (lead.status === 'fechado') {
+          acc.cliente_fechado += 1;
+        } else {
+          acc[lead.status] += 1;
+        }
+
+        if (isFollowUpOverdue(lead)) {
+          acc.atrasados += 1;
+        }
+
+        if (hasFutureFollowUp(lead)) {
+          acc.agendados += 1;
+        }
+
         return acc;
       },
       {
@@ -159,8 +226,12 @@ export function AdminCrmManager() {
         orcamento_enviado: 0,
         em_negociacao: 0,
         fechado: 0,
+        cliente_fechado: 0,
+        pedido_executado: 0,
         perdido: 0,
-      } as Record<LeadStatus | 'total', number>
+        atrasados: 0,
+        agendados: 0,
+      } as Record<LeadStatus | 'total' | 'atrasados' | 'agendados', number>
     );
   }, [leads]);
 
@@ -201,6 +272,20 @@ export function AdminCrmManager() {
     } catch {
       setStatusType('warning');
       setStatusMessage('Não foi possível carregar o histórico deste contacto.');
+    }
+  }
+
+  async function loadStatusHistory(leadId: string) {
+    try {
+      const historyItems = await listCrmStatusHistory(leadId);
+
+      setStatusHistoryByLeadId((current) => ({
+        ...current,
+        [leadId]: historyItems,
+      }));
+    } catch {
+      setStatusType('warning');
+      setStatusMessage('Não foi possível carregar o histórico de estado.');
     }
   }
 
@@ -273,19 +358,37 @@ export function AdminCrmManager() {
     }
   }
 
-  async function handleChangeStatus(lead: CrmLead, status: LeadStatus) {
+  async function handleChangeStatus(lead: CrmLead, newStatus: LeadStatus) {
+    if (lead.status === newStatus) {
+      return;
+    }
+
     setIsSaving(true);
     setStatusMessage('');
 
     try {
       await updateCrmLead({
         id: lead.id,
-        status,
+        status: newStatus,
       });
 
-      await loadLeads(statusFilter);
+      await createCrmStatusHistory({
+        lead_id: lead.id,
+        previous_status: lead.status,
+        new_status: newStatus,
+        changed_by: currentProfile
+          ? `${currentProfile.name} (@${currentProfile.username})`
+          : 'Utilizador admin',
+        changed_by_user_id: currentProfile?.auth_user_id,
+      });
+
+      await Promise.all([
+        loadLeads(statusFilter),
+        loadStatusHistory(lead.id),
+      ]);
+
       setStatusType('success');
-      setStatusMessage('Estado do pedido atualizado.');
+      setStatusMessage('Estado do pedido atualizado e registado no histórico.');
     } catch {
       setStatusType('warning');
       setStatusMessage('Erro ao atualizar o estado do pedido.');
@@ -301,6 +404,17 @@ export function AdminCrmManager() {
 
     if (nextExpandedLeadId && !followUpsByLeadId[lead.id]) {
       await loadFollowUps(lead.id);
+    }
+  }
+
+  async function handleToggleStatusHistory(lead: CrmLead) {
+    const nextVisibleLeadId =
+      visibleStatusHistoryLeadId === lead.id ? null : lead.id;
+
+    setVisibleStatusHistoryLeadId(nextVisibleLeadId);
+
+    if (nextVisibleLeadId && !statusHistoryByLeadId[lead.id]) {
+      await loadStatusHistory(lead.id);
     }
   }
 
@@ -322,6 +436,7 @@ export function AdminCrmManager() {
         contact_type: followUpForm.contact_type,
         note: followUpForm.note,
         next_action: followUpForm.next_action,
+        next_action_date: toIsoDateTimeLocal(followUpForm.next_action_date),
         created_by: currentProfile
           ? `${currentProfile.name} (@${currentProfile.username})`
           : 'Utilizador admin',
@@ -333,7 +448,8 @@ export function AdminCrmManager() {
         [lead.id]: emptyFollowUpForm,
       }));
 
-      await loadFollowUps(lead.id);
+      await Promise.all([loadFollowUps(lead.id), loadLeads(statusFilter)]);
+
       setStatusType('success');
       setStatusMessage('Follow-up registado com sucesso.');
     } catch {
@@ -386,16 +502,39 @@ export function AdminCrmManager() {
           <span>Novos</span>
         </div>
         <div>
-          <strong>{counters.em_contacto}</strong>
-          <span>Em contacto</span>
-        </div>
-        <div>
           <strong>{counters.orcamento_enviado}</strong>
           <span>Orçamentos</span>
         </div>
         <div>
-          <strong>{counters.fechado}</strong>
-          <span>Fechados</span>
+          <strong>{counters.cliente_fechado}</strong>
+          <span>Clientes fechados</span>
+        </div>
+        <div>
+          <strong>{counters.pedido_executado}</strong>
+          <span>Executados</span>
+        </div>
+      </div>
+
+      <div className="admin-crm-summary">
+        <div>
+          <strong>{counters.em_contacto}</strong>
+          <span>Em contacto</span>
+        </div>
+        <div>
+          <strong>{counters.em_negociacao}</strong>
+          <span>Em negociação</span>
+        </div>
+        <div>
+          <strong>{counters.agendados}</strong>
+          <span>Follow-ups agendados</span>
+        </div>
+        <div>
+          <strong>{counters.atrasados}</strong>
+          <span>Follow-ups atrasados</span>
+        </div>
+        <div>
+          <strong>{counters.perdido}</strong>
+          <span>Perdidos</span>
         </div>
       </div>
 
@@ -561,8 +700,11 @@ export function AdminCrmManager() {
           <div className="admin-crm-list">
             {paginatedLeads.map((lead) => {
               const isExpanded = expandedLeadId === lead.id;
+              const isStatusHistoryVisible = visibleStatusHistoryLeadId === lead.id;
               const followUps = followUpsByLeadId[lead.id] || [];
+              const statusHistory = statusHistoryByLeadId[lead.id] || [];
               const currentFollowUpForm = followUpForms[lead.id] || emptyFollowUpForm;
+              const overdue = isFollowUpOverdue(lead);
 
               return (
                 <div className="admin-crm-lead" key={lead.id}>
@@ -587,6 +729,24 @@ export function AdminCrmManager() {
                         {leadOriginLabels[lead.origin] || 'Origem desconhecida'}
                       </span>
 
+                      {lead.next_follow_up_at && (
+                        <span
+                          className={
+                            overdue
+                              ? 'admin-crm-origin admin-crm-followup-overdue'
+                              : 'admin-crm-origin admin-crm-followup-scheduled'
+                          }
+                        >
+                          {overdue ? (
+                            <AlertCircle size={14} />
+                          ) : (
+                            <CalendarDays size={14} />
+                          )}
+                          {overdue ? 'Atrasado' : 'Próximo'}:{' '}
+                          {formatDate(lead.next_follow_up_at)}
+                        </span>
+                      )}
+
                       <select
                         value={lead.status}
                         onChange={(event) =>
@@ -602,6 +762,17 @@ export function AdminCrmManager() {
                             </option>
                           ))}
                       </select>
+
+                      <button
+                        type="button"
+                        className="admin-secondary-button"
+                        onClick={() => handleToggleStatusHistory(lead)}
+                      >
+                        <History size={17} />
+                        {isStatusHistoryVisible
+                          ? 'Fechar histórico'
+                          : 'Histórico de estado'}
+                      </button>
 
                       <button
                         type="button"
@@ -634,6 +805,66 @@ export function AdminCrmManager() {
                     )}
                   </div>
 
+                  {isStatusHistoryVisible && (
+                    <div className="admin-crm-history admin-crm-status-history-box">
+                      <div className="admin-crm-history-heading">
+                        <History size={20} />
+                        <div>
+                          <strong>Histórico de estado</strong>
+                          <p>
+                            {statusHistory.length === 0
+                              ? 'Ainda não existem alterações de estado registadas.'
+                              : `${statusHistory.length} ${
+                                  statusHistory.length === 1
+                                    ? 'alteração encontrada'
+                                    : 'alterações encontradas'
+                                }`}
+                          </p>
+                        </div>
+                      </div>
+
+                      {statusHistory.length > 0 && (
+                        <div className="admin-crm-history-list">
+                          {statusHistory.map((item) => (
+                            <div
+                              className="admin-crm-history-item"
+                              key={item.id}
+                            >
+                              <div className="admin-crm-history-meta">
+                                <span>
+                                  <ArrowRightLeft size={14} />
+                                  Alteração de estado
+                                </span>
+                                <small>{formatDate(item.created_at)}</small>
+                              </div>
+
+                              <div className="admin-crm-status-change-line">
+                                <div>
+                                  <strong>Estado anterior</strong>
+                                  <span>
+                                    {item.previous_status
+                                      ? leadStatusLabels[item.previous_status]
+                                      : 'Sem estado anterior'}
+                                  </span>
+                                </div>
+
+                                <div>
+                                  <strong>Novo estado</strong>
+                                  <span>{leadStatusLabels[item.new_status]}</span>
+                                </div>
+                              </div>
+
+                              <small>
+                                Alterado por:{' '}
+                                {item.changed_by || 'Utilizador não identificado'}
+                              </small>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   {isExpanded && (
                     <div className="admin-crm-lead-details">
                       <div className="admin-crm-detail-grid">
@@ -655,6 +886,34 @@ export function AdminCrmManager() {
                         <div>
                           <strong>Última atualização</strong>
                           <span>{formatDate(lead.updated_at)}</span>
+                        </div>
+
+                        <div>
+                          <strong>Próximo follow-up</strong>
+                          <span>
+                            {lead.next_follow_up_at
+                              ? formatDate(lead.next_follow_up_at)
+                              : 'Sem data agendada'}
+                          </span>
+                        </div>
+
+                        <div>
+                          <strong>Cliente fechado em</strong>
+                          <span>
+                            {lead.closed_at ? formatDateOnly(lead.closed_at) : '—'}
+                          </span>
+                        </div>
+
+                        <div>
+                          <strong>Pedido executado em</strong>
+                          <span>
+                            {lead.executed_at ? formatDateOnly(lead.executed_at) : '—'}
+                          </span>
+                        </div>
+
+                        <div>
+                          <strong>Origem</strong>
+                          <span>{leadOriginLabels[lead.origin] || '—'}</span>
                         </div>
                       </div>
 
@@ -697,20 +956,35 @@ export function AdminCrmManager() {
                           </label>
 
                           <label>
-                            Próxima ação
+                            Data da próxima ação
                             <input
-                              value={currentFollowUpForm.next_action}
+                              type="datetime-local"
+                              value={currentFollowUpForm.next_action_date}
                               onChange={(event) =>
                                 updateFollowUpFormField(
                                   lead.id,
-                                  'next_action',
+                                  'next_action_date',
                                   event.target.value
                                 )
                               }
-                              placeholder="Ex: Ligar amanhã, enviar orçamento, aguardar resposta"
                             />
                           </label>
                         </div>
+
+                        <label>
+                          Próxima ação
+                          <input
+                            value={currentFollowUpForm.next_action}
+                            onChange={(event) =>
+                              updateFollowUpFormField(
+                                lead.id,
+                                'next_action',
+                                event.target.value
+                              )
+                            }
+                            placeholder="Ex: Ligar amanhã, enviar orçamento, aguardar resposta"
+                          />
+                        </label>
 
                         <label>
                           Nota do follow-up
@@ -772,6 +1046,13 @@ export function AdminCrmManager() {
                                   </div>
                                 )}
 
+                                {followUp.next_action_date && (
+                                  <div className="admin-crm-next-action">
+                                    <strong>Data da próxima ação:</strong>{' '}
+                                    {formatDate(followUp.next_action_date)}
+                                  </div>
+                                )}
+
                                 <small>
                                   Registado por:{' '}
                                   {followUp.created_by || 'Utilizador não identificado'}
@@ -819,8 +1100,9 @@ export function AdminCrmManager() {
       <div className="admin-note">
         <strong>Nota importante:</strong>
         <p>
-          Esta área serve para acompanhar oportunidades comerciais. Os estados e
-          follow-ups ajudam a perceber em que fase está cada contacto.
+          Esta área serve para acompanhar oportunidades comerciais. Os estados,
+          follow-ups e datas de próxima ação ajudam a perceber em que fase está
+          cada contacto.
         </p>
       </div>
     </div>
