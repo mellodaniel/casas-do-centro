@@ -3,6 +3,7 @@ import { supabase } from './supabaseClient';
 export const SITE_CONTENT_TABLE = 'casas_centro_site_content';
 export const SITE_CONTENT_ID = 'main';
 export const SITE_IMAGES_BUCKET = 'casas-centro-images';
+export const MANAGE_ADMIN_USERS_FUNCTION = 'manage-admin-users';
 
 export type ContentPatch = Record<string, any>;
 
@@ -148,22 +149,30 @@ export async function uploadSiteImage(file: File, folder: string): Promise<strin
   return data.publicUrl;
 }
 
-export function mapAdminUsernameToEmail(username: string) {
-  const normalizedUsername = username.trim().toLowerCase();
+export async function resolveAdminLoginEmail(usernameOrEmail: string) {
+  const { data, error } = await supabase.functions.invoke(
+    MANAGE_ADMIN_USERS_FUNCTION,
+    {
+      body: {
+        action: 'resolve-login',
+        username: usernameOrEmail,
+      },
+    }
+  );
 
-  if (normalizedUsername === 'dina' || normalizedUsername === 'admin') {
-    return 'dina@casasdocentro.pt';
+  if (error) {
+    throw error;
   }
 
-  return '';
-}
-
-export async function signInAdmin(username: string, password: string) {
-  const email = mapAdminUsernameToEmail(username);
-
-  if (!email) {
+  if (!data?.email) {
     throw new Error('Utilizador inválido.');
   }
+
+  return data.email as string;
+}
+
+export async function signInAdmin(usernameOrEmail: string, password: string) {
+  const email = await resolveAdminLoginEmail(usernameOrEmail);
 
   const { error } = await supabase.auth.signInWithPassword({
     email,

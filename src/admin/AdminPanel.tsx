@@ -1,4 +1,4 @@
-import type { ChangeEvent, FormEvent } from 'react';
+import type { ChangeEvent } from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import {
   ArrowLeft,
@@ -13,6 +13,7 @@ import {
   BadgeCheck,
   HelpCircle,
   LogOut,
+  UserRound,
 } from 'lucide-react';
 import { siteContent } from '../data/siteContent';
 import {
@@ -24,7 +25,12 @@ import {
   uploadSiteImage,
   type ContentPatch,
 } from '../lib/siteContentService';
+import {
+  getCurrentAdminProfile,
+  type CurrentAdminProfile,
+} from '../lib/adminUsersService';
 import { AdminLogin } from './AdminLogin';
+import { AdminUsersManager } from './AdminUsersManager';
 import './admin.css';
 
 const MAX_GALLERY_IMAGES_PER_SECTION = 5;
@@ -215,6 +221,14 @@ export function AdminPanel() {
   const [isSaving, setIsSaving] = useState(false);
   const [draft, setDraft] = useState<AdminDraft>(() => createDraftFromPatch({}));
   const [statusMessage, setStatusMessage] = useState('');
+  const [currentProfile, setCurrentProfile] = useState<CurrentAdminProfile | null>(
+    null
+  );
+
+  async function loadCurrentProfile() {
+    const profile = await getCurrentAdminProfile();
+    setCurrentProfile(profile);
+  }
 
   async function loadAdminContent() {
     setIsLoadingContent(true);
@@ -223,6 +237,7 @@ export function AdminPanel() {
     try {
       const patch = await getSiteContentPatch();
       setDraft(createDraftFromPatch(patch));
+      await loadCurrentProfile();
     } catch {
       setStatusMessage('Não foi possível carregar o conteúdo do Supabase.');
     } finally {
@@ -487,9 +502,7 @@ export function AdminPanel() {
     setStatusMessage('Imagem removida. Não te esqueças de guardar alterações.');
   }
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
+  async function handleSaveChanges() {
     const galleryItems = cleanLines(draft.gallery.itemsText);
     const galleryImagesUrlsBySection = ensureGallerySectionSlots(
       draft.gallery.imagesUrlsBySection,
@@ -574,6 +587,7 @@ export function AdminPanel() {
 
   async function handleLogout() {
     await signOutAdmin();
+    setCurrentProfile(null);
     setIsAuthenticated(false);
   }
 
@@ -607,23 +621,43 @@ export function AdminPanel() {
           <span className="admin-kicker">Área administrativa</span>
           <h1>Casas do Centro</h1>
           <p>
-            Painel para editar textos principais, imagens, modelos, vantagens,
-            FAQ e contactos.
+            Painel para editar o conteúdo do website e gerir acessos administrativos.
           </p>
         </div>
 
         <nav className="admin-sidebar-nav">
-          <a href="#hero">Homepage</a>
-          <a href="#imagem">Imagem principal</a>
-          <a href="#sobre">Sobre nós</a>
-          <a href="#modelos">Modelos</a>
-          <a href="#vantagens">Vantagens</a>
-          <a href="#galeria">Galeria</a>
-          <a href="#faq-admin">FAQ</a>
-          <a href="#contactos">Contactos</a>
+          <div className="admin-sidebar-nav-group">
+            <span>Conteúdo do website</span>
+            <a href="#hero">Homepage</a>
+            <a href="#imagem">Imagem principal</a>
+            <a href="#sobre">Sobre nós</a>
+            <a href="#modelos">Modelos</a>
+            <a href="#vantagens">Vantagens</a>
+            <a href="#galeria">Galeria</a>
+            <a href="#faq-admin">FAQ</a>
+            <a href="#contactos">Contactos</a>
+          </div>
+
+          <div className="admin-sidebar-nav-group admin-sidebar-nav-management">
+            <span>Gestão interna</span>
+            <a href="#utilizadores">Utilizadores</a>
+          </div>
         </nav>
 
         <div className="admin-sidebar-actions">
+          {currentProfile && (
+            <div className="admin-sidebar-current-user">
+              <UserRound size={18} />
+              <div>
+                <strong>{currentProfile.name}</strong>
+                <span>
+                  @{currentProfile.username} ·{' '}
+                  {currentProfile.role === 'admin' ? 'Administrador' : 'Editor'}
+                </span>
+              </div>
+            </div>
+          )}
+
           <a className="admin-back-link" href="/">
             <ArrowLeft size={18} />
             Voltar ao site
@@ -644,6 +678,19 @@ export function AdminPanel() {
           </div>
 
           <div className="admin-topbar-actions">
+            {currentProfile && (
+              <div className="admin-session-pill">
+                <UserRound size={18} />
+                <div>
+                  <strong>{currentProfile.name}</strong>
+                  <span>
+                    @{currentProfile.username} ·{' '}
+                    {currentProfile.role === 'admin' ? 'Administrador' : 'Editor'}
+                  </span>
+                </div>
+              </div>
+            )}
+
             <button
               type="button"
               className="admin-secondary-button"
@@ -662,7 +709,7 @@ export function AdminPanel() {
 
         {statusMessage && <div className="admin-alert">{statusMessage}</div>}
 
-        <form className="admin-layout" onSubmit={handleSubmit}>
+        <div className="admin-layout">
           <section className="admin-editor">
             <div id="hero" className="admin-card">
               <div className="admin-card-heading">
@@ -913,7 +960,8 @@ export function AdminPanel() {
                         <div>
                           <strong>{item}</strong>
                           <small>
-                            {sectionImages.filter(Boolean).length} de {MAX_GALLERY_IMAGES_PER_SECTION} fotos
+                            {sectionImages.filter(Boolean).length} de{' '}
+                            {MAX_GALLERY_IMAGES_PER_SECTION} fotos
                           </small>
                         </div>
                       </div>
@@ -1076,8 +1124,15 @@ export function AdminPanel() {
               </label>
             </div>
 
+            <AdminUsersManager />
+
             <div className="admin-save-bar">
-              <button type="submit" className="admin-save-button" disabled={isSaving}>
+              <button
+                type="button"
+                className="admin-save-button"
+                disabled={isSaving}
+                onClick={handleSaveChanges}
+              >
                 <Save size={20} />
                 {isSaving ? 'A guardar...' : 'Guardar alterações'}
               </button>
@@ -1156,12 +1211,12 @@ export function AdminPanel() {
             <div className="admin-note">
               <strong>Nota importante:</strong>
               <p>
-              Depois de fazer alterações nos textos ou imagens, clique sempre em “Guardar alterações”
-              para que o conteúdo fique atualizado no website.
+                Depois de fazer alterações nos textos ou imagens, clique sempre em
+                “Guardar alterações” para que o conteúdo fique atualizado no website.
               </p>
             </div>
           </aside>
-        </form>
+        </div>
       </main>
     </div>
   );
