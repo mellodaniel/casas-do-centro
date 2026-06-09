@@ -31,6 +31,7 @@ import {
 } from '../lib/adminUsersService';
 import { AdminLogin } from './AdminLogin';
 import { AdminUsersManager } from './AdminUsersManager';
+import { AdminCrmManager } from './AdminCrmManager';
 import './admin.css';
 
 const MAX_GALLERY_IMAGES_PER_SECTION = 5;
@@ -621,7 +622,8 @@ export function AdminPanel() {
           <span className="admin-kicker">Área administrativa</span>
           <h1>Casas do Centro</h1>
           <p>
-            Painel para editar o conteúdo do website e gerir acessos administrativos.
+            Painel para editar o conteúdo do website, gerir pedidos e acessos
+            administrativos.
           </p>
         </div>
 
@@ -636,6 +638,11 @@ export function AdminPanel() {
             <a href="#galeria">Galeria</a>
             <a href="#faq-admin">FAQ</a>
             <a href="#contactos">Contactos</a>
+          </div>
+
+          <div className="admin-sidebar-nav-group admin-sidebar-nav-crm">
+            <span>Gestão comercial</span>
+            <a href="#crm">CRM / Pedidos</a>
           </div>
 
           <div className="admin-sidebar-nav-group admin-sidebar-nav-management">
@@ -1123,6 +1130,8 @@ export function AdminPanel() {
                 />
               </label>
             </div>
+
+            <AdminCrmManager />
 
             <AdminUsersManager />
 
