@@ -11,6 +11,7 @@ import {
   RotateCcw,
   Save,
   Type,
+  SlidersHorizontal,
 } from 'lucide-react';
 import { siteContent } from '../data/siteContent';
 import {
@@ -39,7 +40,42 @@ type IconContentItem = {
   text: string;
 };
 
+type HomepageSettingsDraft = {
+  modelsCount: number;
+  benefitsCount: number;
+  processStepsCount: number;
+  gallerySectionsCount: number;
+  showQuestionsCard: boolean;
+};
+
+const DEFAULT_HOMEPAGE_SETTINGS: HomepageSettingsDraft = {
+  modelsCount: 4,
+  benefitsCount: 4,
+  processStepsCount: 3,
+  gallerySectionsCount: 2,
+  showQuestionsCard: true,
+};
+
+function normalizeNumber(value: unknown, fallback: number, min: number, max: number) {
+  const parsedValue = Number(value);
+
+  if (!Number.isFinite(parsedValue)) {
+    return fallback;
+  }
+
+  return Math.min(Math.max(Math.round(parsedValue), min), max);
+}
+
+function normalizeBoolean(value: unknown, fallback: boolean) {
+  if (typeof value === 'boolean') {
+    return value;
+  }
+
+  return fallback;
+}
+
 type AdminDraft = {
+  homepageSettings: HomepageSettingsDraft;
   hero: {
     title: string;
     subtitle: string;
@@ -149,8 +185,39 @@ function ensureGallerySectionSlots(imagesBySection: string[][], sectionCount: nu
 function createDraftFromPatch(patch: ContentPatch): AdminDraft {
   const content = buildSiteContent(siteContent, patch);
   const galleryItems = content.gallery.items || [];
+  const rawHomepageSettings = patch.homepageSettings || {};
 
   return {
+    homepageSettings: {
+      modelsCount: normalizeNumber(
+        rawHomepageSettings.modelsCount,
+        DEFAULT_HOMEPAGE_SETTINGS.modelsCount,
+        0,
+        content.models.length
+      ),
+      benefitsCount: normalizeNumber(
+        rawHomepageSettings.benefitsCount,
+        DEFAULT_HOMEPAGE_SETTINGS.benefitsCount,
+        0,
+        content.benefits.length
+      ),
+      processStepsCount: normalizeNumber(
+        rawHomepageSettings.processStepsCount,
+        DEFAULT_HOMEPAGE_SETTINGS.processStepsCount,
+        0,
+        content.process.steps.length
+      ),
+      gallerySectionsCount: normalizeNumber(
+        rawHomepageSettings.gallerySectionsCount,
+        DEFAULT_HOMEPAGE_SETTINGS.gallerySectionsCount,
+        0,
+        galleryItems.length
+      ),
+      showQuestionsCard: normalizeBoolean(
+        rawHomepageSettings.showQuestionsCard,
+        DEFAULT_HOMEPAGE_SETTINGS.showQuestionsCard
+      ),
+    },
     hero: {
       title: content.hero.title,
       subtitle: content.hero.subtitle,
@@ -257,6 +324,20 @@ export function AdminContentManager() {
       },
     }));
   }
+
+  function updateHomepageSetting<K extends keyof HomepageSettingsDraft>(
+    field: K,
+    value: HomepageSettingsDraft[K]
+  ) {
+    setDraft((current) => ({
+      ...current,
+      homepageSettings: {
+        ...current.homepageSettings,
+        [field]: value,
+      },
+    }));
+  }
+
 
   function updateContactField(field: keyof AdminDraft['contact'], value: string) {
     setDraft((current) => ({
@@ -478,6 +559,7 @@ export function AdminContentManager() {
 
     try {
       await saveSiteContentPatch({
+        homepageSettings: draft.homepageSettings,
         hero: {
           title: draft.hero.title,
           subtitle: draft.hero.subtitle,
@@ -677,6 +759,124 @@ export function AdminContentManager() {
                 alt="Pré-visualização da imagem principal"
               />
             )}
+          </div>
+
+          <div id="homepage" className="admin-card">
+            <div className="admin-card-heading">
+              <SlidersHorizontal size={22} />
+              <div>
+                <h3>Destaques da homepage</h3>
+                <p>Controla quantos itens aparecem na página inicial, sem alterar as páginas completas.</p>
+              </div>
+            </div>
+
+            <div className="admin-two-fields">
+              <label>
+                Modelos na homepage
+                <small>Máximo disponível: {draft.models.length}</small>
+                <input
+                  type="number"
+                  min="0"
+                  max={draft.models.length}
+                  value={draft.homepageSettings.modelsCount}
+                  onChange={(event) =>
+                    updateHomepageSetting(
+                      'modelsCount',
+                      normalizeNumber(
+                        event.target.value,
+                        DEFAULT_HOMEPAGE_SETTINGS.modelsCount,
+                        0,
+                        draft.models.length
+                      )
+                    )
+                  }
+                />
+              </label>
+
+              <label>
+                Vantagens na homepage
+                <small>Máximo disponível: {draft.benefits.length}</small>
+                <input
+                  type="number"
+                  min="0"
+                  max={draft.benefits.length}
+                  value={draft.homepageSettings.benefitsCount}
+                  onChange={(event) =>
+                    updateHomepageSetting(
+                      'benefitsCount',
+                      normalizeNumber(
+                        event.target.value,
+                        DEFAULT_HOMEPAGE_SETTINGS.benefitsCount,
+                        0,
+                        draft.benefits.length
+                      )
+                    )
+                  }
+                />
+              </label>
+            </div>
+
+            <div className="admin-two-fields">
+              <label>
+                Passos do processo na homepage
+                <small>Máximo disponível: {siteContent.process.steps.length}</small>
+                <input
+                  type="number"
+                  min="0"
+                  max={siteContent.process.steps.length}
+                  value={draft.homepageSettings.processStepsCount}
+                  onChange={(event) =>
+                    updateHomepageSetting(
+                      'processStepsCount',
+                      normalizeNumber(
+                        event.target.value,
+                        DEFAULT_HOMEPAGE_SETTINGS.processStepsCount,
+                        0,
+                        siteContent.process.steps.length
+                      )
+                    )
+                  }
+                />
+              </label>
+
+              <label>
+                Secções da galeria na homepage
+                <small>Máximo disponível: {previewContent.galleryItems.length}</small>
+                <input
+                  type="number"
+                  min="0"
+                  max={previewContent.galleryItems.length}
+                  value={draft.homepageSettings.gallerySectionsCount}
+                  onChange={(event) =>
+                    updateHomepageSetting(
+                      'gallerySectionsCount',
+                      normalizeNumber(
+                        event.target.value,
+                        DEFAULT_HOMEPAGE_SETTINGS.gallerySectionsCount,
+                        0,
+                        previewContent.galleryItems.length
+                      )
+                    )
+                  }
+                />
+              </label>
+            </div>
+
+            <label>
+              Chamada para dúvidas na homepage
+              <select
+                value={draft.homepageSettings.showQuestionsCard ? 'yes' : 'no'}
+                onChange={(event) =>
+                  updateHomepageSetting(
+                    'showQuestionsCard',
+                    event.target.value === 'yes'
+                  )
+                }
+              >
+                <option value="yes">Mostrar chamada para a página de dúvidas</option>
+                <option value="no">Ocultar chamada para dúvidas na homepage</option>
+              </select>
+            </label>
           </div>
 
           <div id="sobre" className="admin-card">
@@ -1113,6 +1313,22 @@ export function AdminContentManager() {
               {draft.faq.items.map((faq) => (
                 <span key={faq.question}>{faq.question}</span>
               ))}
+            </div>
+          </div>
+
+          <div className="admin-preview-card small">
+            <span className="admin-kicker">Homepage</span>
+            <h3>Destaques ativos</h3>
+            <div className="admin-preview-tags">
+              <span>{draft.homepageSettings.modelsCount} modelos</span>
+              <span>{draft.homepageSettings.benefitsCount} vantagens</span>
+              <span>{draft.homepageSettings.processStepsCount} passos</span>
+              <span>{draft.homepageSettings.gallerySectionsCount} secções da galeria</span>
+              <span>
+                {draft.homepageSettings.showQuestionsCard
+                  ? 'Chamada para dúvidas ativa'
+                  : 'Chamada para dúvidas oculta'}
+              </span>
             </div>
           </div>
 

@@ -48,6 +48,32 @@ type PublicPage = 'home' | 'galeria' | 'duvidas' | 'contacto';
 
 const INSTAGRAM_URL = 'https://www.instagram.com/casasdocentro/';
 
+const DEFAULT_HOMEPAGE_SETTINGS = {
+  modelsCount: 4,
+  benefitsCount: 4,
+  processStepsCount: 3,
+  gallerySectionsCount: 2,
+  showQuestionsCard: true,
+};
+
+function normalizeHomepageCount(value: unknown, fallback: number, max: number) {
+  const parsedValue = Number(value);
+
+  if (!Number.isFinite(parsedValue)) {
+    return fallback;
+  }
+
+  return Math.min(Math.max(Math.round(parsedValue), 0), max);
+}
+
+function normalizeHomepageBoolean(value: unknown, fallback: boolean) {
+  if (typeof value === 'boolean') {
+    return value;
+  }
+
+  return fallback;
+}
+
 const publicNavigation: Array<{ label: string; href: string }> = [
   { label: 'Início', href: '/' },
   { label: 'Modelos', href: '/#modelos' },
@@ -441,6 +467,37 @@ function App() {
     [contentPatch, content.gallery.items.length]
   );
 
+  const homepageSettings = useMemo(() => {
+    const rawSettings = contentPatch.homepageSettings || {};
+
+    return {
+      modelsCount: normalizeHomepageCount(
+        rawSettings.modelsCount,
+        DEFAULT_HOMEPAGE_SETTINGS.modelsCount,
+        content.models.length
+      ),
+      benefitsCount: normalizeHomepageCount(
+        rawSettings.benefitsCount,
+        DEFAULT_HOMEPAGE_SETTINGS.benefitsCount,
+        content.benefits.length
+      ),
+      processStepsCount: normalizeHomepageCount(
+        rawSettings.processStepsCount,
+        DEFAULT_HOMEPAGE_SETTINGS.processStepsCount,
+        content.process.steps.length
+      ),
+      gallerySectionsCount: normalizeHomepageCount(
+        rawSettings.gallerySectionsCount,
+        DEFAULT_HOMEPAGE_SETTINGS.gallerySectionsCount,
+        content.gallery.items.length
+      ),
+      showQuestionsCard: normalizeHomepageBoolean(
+        rawSettings.showQuestionsCard,
+        DEFAULT_HOMEPAGE_SETTINGS.showQuestionsCard
+      ),
+    };
+  }, [content, contentPatch.homepageSettings]);
+
   const selectedDistrict = centerPortugalLocations.find(
     (item) => item.district === contactForm.district
   );
@@ -449,9 +506,16 @@ function App() {
 
   const whatsappMessage = encodeURIComponent(content.contact.whatsappMessage);
 
-  const galleryPreviewItems = content.gallery.items.slice(0, 2);
-  const processPreviewSteps = content.process.steps.slice(0, 3);
-  const benefitsPreview = content.benefits.slice(0, 4);
+  const modelsPreview = content.models.slice(0, homepageSettings.modelsCount);
+  const galleryPreviewItems = content.gallery.items.slice(
+    0,
+    homepageSettings.gallerySectionsCount
+  );
+  const processPreviewSteps = content.process.steps.slice(
+    0,
+    homepageSettings.processStepsCount
+  );
+  const benefitsPreview = content.benefits.slice(0, homepageSettings.benefitsCount);
 
   const closeMenu = () => setMenuOpen(false);
 
@@ -902,7 +966,7 @@ function App() {
             </div>
 
             <div className="home-models-grid">
-              {content.models.map((model) => {
+              {modelsPreview.map((model) => {
                 const Icon = model.icon;
 
                 return (
@@ -928,16 +992,18 @@ function App() {
                 <p>{content.benefitsSection.description}</p>
               </div>
 
-              <a href="/duvidas" className="home-questions-highlight-card">
-                <span className="home-questions-highlight-icon">
-                  <HelpCircle size={26} />
-                </span>
-                <span>
-                  <strong>Dúvidas sobre licenciamento, medidas ou orçamento?</strong>
-                  <small>Veja as respostas principais antes de pedir a sua proposta.</small>
-                </span>
-                <ArrowRight size={20} />
-              </a>
+              {homepageSettings.showQuestionsCard && (
+                <a href="/duvidas" className="home-questions-highlight-card">
+                  <span className="home-questions-highlight-icon">
+                    <HelpCircle size={26} />
+                  </span>
+                  <span>
+                    <strong>Dúvidas sobre licenciamento, medidas ou orçamento?</strong>
+                    <small>Veja as respostas principais antes de pedir a sua proposta.</small>
+                  </span>
+                  <ArrowRight size={20} />
+                </a>
+              )}
             </div>
 
             <div className="home-benefits-row">
