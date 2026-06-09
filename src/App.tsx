@@ -450,7 +450,6 @@ function App() {
   const whatsappMessage = encodeURIComponent(content.contact.whatsappMessage);
 
   const galleryPreviewItems = content.gallery.items.slice(0, 2);
-  const faqPreviewItems = content.faq.items.slice(0, 3);
   const processPreviewSteps = content.process.steps.slice(0, 3);
   const benefitsPreview = content.benefits.slice(0, 4);
 
@@ -929,8 +928,15 @@ function App() {
                 <p>{content.benefitsSection.description}</p>
               </div>
 
-              <a href="/duvidas" className="section-action-link">
-                Ver dúvidas frequentes <ArrowRight size={18} />
+              <a href="/duvidas" className="home-questions-highlight-card">
+                <span className="home-questions-highlight-icon">
+                  <HelpCircle size={26} />
+                </span>
+                <span>
+                  <strong>Dúvidas sobre licenciamento, medidas ou orçamento?</strong>
+                  <small>Veja as respostas principais antes de pedir a sua proposta.</small>
+                </span>
+                <ArrowRight size={20} />
               </a>
             </div>
 
@@ -972,43 +978,21 @@ function App() {
         </section>
 
         <section className="section compact-section">
-          <div className="container home-preview-split">
-            <div className="home-preview-card">
+          <div className="container">
+            <div className="home-preview-card home-gallery-feature-card">
               <div className="section-heading section-heading-with-action">
                 <div>
                   <span className="section-label">{content.gallery.label}</span>
                   <h2>Veja inspirações para o seu projeto.</h2>
                   <p>{content.gallery.description}</p>
                 </div>
+
+                <a href="/galeria" className="section-action-link">
+                  Ver galeria completa <ArrowRight size={18} />
+                </a>
               </div>
 
               {renderGalleryBlock(false)}
-
-              <a href="/galeria" className="section-action-link inline-action">
-                Ver galeria completa <ArrowRight size={18} />
-              </a>
-            </div>
-
-            <div className="home-preview-card home-faq-preview-card">
-              <span className="section-label">{content.faq.label}</span>
-              <h2>Dúvidas antes de começar?</h2>
-              <p>{content.faq.description}</p>
-
-              <div className="faq-list">
-                {faqPreviewItems.map((faq) => (
-                  <details key={faq.question} className="faq-item">
-                    <summary>
-                      <HelpCircle size={20} />
-                      {faq.question}
-                    </summary>
-                    <p>{faq.answer}</p>
-                  </details>
-                ))}
-              </div>
-
-              <a href="/duvidas" className="section-action-link inline-action">
-                Ver todas as dúvidas <ArrowRight size={18} />
-              </a>
             </div>
           </div>
         </section>
