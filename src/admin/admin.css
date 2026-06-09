@@ -2163,3 +2163,41 @@
     grid-template-columns: 1fr;
   }
 }
+
+
+/* Fase 3.2 - alinhamento dos itens selecionáveis da homepage */
+.admin-homepage-selection-option {
+  display: flex !important;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 12px !important;
+  min-height: 44px;
+  margin: 8px 0 !important;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.64);
+  border: 1px solid rgba(122, 72, 0, 0.08);
+  cursor: pointer;
+  line-height: 1.35;
+}
+
+.admin-homepage-selection-option:hover {
+  background: #ffffff;
+  border-color: rgba(67, 165, 47, 0.2);
+}
+
+.admin-homepage-selection-option input[type='checkbox'] {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  margin: 0;
+  accent-color: #43a52f;
+}
+
+.admin-repeat-item > small {
+  display: block;
+  margin: -6px 0 12px;
+  color: #777777;
+  font-weight: 700;
+  line-height: 1.4;
+}

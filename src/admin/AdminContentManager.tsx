@@ -45,6 +45,10 @@ type HomepageSettingsDraft = {
   benefitsCount: number;
   processStepsCount: number;
   gallerySectionsCount: number;
+  selectedModelIndexes: number[];
+  selectedBenefitIndexes: number[];
+  selectedProcessStepIndexes: number[];
+  selectedGallerySectionIndexes: number[];
   showQuestionsCard: boolean;
 };
 
@@ -53,6 +57,10 @@ const DEFAULT_HOMEPAGE_SETTINGS: HomepageSettingsDraft = {
   benefitsCount: 4,
   processStepsCount: 3,
   gallerySectionsCount: 2,
+  selectedModelIndexes: [0, 1, 2, 3],
+  selectedBenefitIndexes: [0, 1, 2, 3],
+  selectedProcessStepIndexes: [0, 1, 2],
+  selectedGallerySectionIndexes: [0, 1],
   showQuestionsCard: true,
 };
 
@@ -72,6 +80,30 @@ function normalizeBoolean(value: unknown, fallback: boolean) {
   }
 
   return fallback;
+}
+
+function buildSequentialIndexes(count: number, max: number) {
+  return Array.from({ length: Math.min(Math.max(count, 0), max) }, (_, index) => index);
+}
+
+function normalizeSelectedIndexes(
+  value: unknown,
+  max: number,
+  fallbackIndexes: number[]
+) {
+  if (!Array.isArray(value)) {
+    return fallbackIndexes;
+  }
+
+  const uniqueIndexes = Array.from(
+    new Set(
+      value
+        .map((item) => Number(item))
+        .filter((item) => Number.isInteger(item) && item >= 0 && item < max)
+    )
+  );
+
+  return uniqueIndexes.length > 0 ? uniqueIndexes : fallbackIndexes;
 }
 
 type AdminDraft = {
@@ -213,6 +245,58 @@ function createDraftFromPatch(patch: ContentPatch): AdminDraft {
         0,
         galleryItems.length
       ),
+      selectedModelIndexes: normalizeSelectedIndexes(
+        rawHomepageSettings.selectedModelIndexes,
+        content.models.length,
+        buildSequentialIndexes(
+          normalizeNumber(
+            rawHomepageSettings.modelsCount,
+            DEFAULT_HOMEPAGE_SETTINGS.modelsCount,
+            0,
+            content.models.length
+          ),
+          content.models.length
+        )
+      ),
+      selectedBenefitIndexes: normalizeSelectedIndexes(
+        rawHomepageSettings.selectedBenefitIndexes,
+        content.benefits.length,
+        buildSequentialIndexes(
+          normalizeNumber(
+            rawHomepageSettings.benefitsCount,
+            DEFAULT_HOMEPAGE_SETTINGS.benefitsCount,
+            0,
+            content.benefits.length
+          ),
+          content.benefits.length
+        )
+      ),
+      selectedProcessStepIndexes: normalizeSelectedIndexes(
+        rawHomepageSettings.selectedProcessStepIndexes,
+        content.process.steps.length,
+        buildSequentialIndexes(
+          normalizeNumber(
+            rawHomepageSettings.processStepsCount,
+            DEFAULT_HOMEPAGE_SETTINGS.processStepsCount,
+            0,
+            content.process.steps.length
+          ),
+          content.process.steps.length
+        )
+      ),
+      selectedGallerySectionIndexes: normalizeSelectedIndexes(
+        rawHomepageSettings.selectedGallerySectionIndexes,
+        galleryItems.length,
+        buildSequentialIndexes(
+          normalizeNumber(
+            rawHomepageSettings.gallerySectionsCount,
+            DEFAULT_HOMEPAGE_SETTINGS.gallerySectionsCount,
+            0,
+            galleryItems.length
+          ),
+          galleryItems.length
+        )
+      ),
       showQuestionsCard: normalizeBoolean(
         rawHomepageSettings.showQuestionsCard,
         DEFAULT_HOMEPAGE_SETTINGS.showQuestionsCard
@@ -336,6 +420,42 @@ export function AdminContentManager() {
         [field]: value,
       },
     }));
+  }
+
+  function toggleHomepageSelection(
+    field:
+      | 'selectedModelIndexes'
+      | 'selectedBenefitIndexes'
+      | 'selectedProcessStepIndexes'
+      | 'selectedGallerySectionIndexes',
+    index: number
+  ) {
+    setDraft((current) => {
+      const currentIndexes = current.homepageSettings[field];
+      const isSelected = currentIndexes.includes(index);
+      const nextIndexes = isSelected
+        ? currentIndexes.filter((item) => item !== index)
+        : [...currentIndexes, index].sort((a, b) => a - b);
+
+      return {
+        ...current,
+        homepageSettings: {
+          ...current.homepageSettings,
+          [field]: nextIndexes,
+        },
+      };
+    });
+  }
+
+  function isHomepageSelected(
+    field:
+      | 'selectedModelIndexes'
+      | 'selectedBenefitIndexes'
+      | 'selectedProcessStepIndexes'
+      | 'selectedGallerySectionIndexes',
+    index: number
+  ) {
+    return draft.homepageSettings[field].includes(index);
   }
 
 
@@ -559,7 +679,13 @@ export function AdminContentManager() {
 
     try {
       await saveSiteContentPatch({
-        homepageSettings: draft.homepageSettings,
+        homepageSettings: {
+          ...draft.homepageSettings,
+          modelsCount: draft.homepageSettings.selectedModelIndexes.length,
+          benefitsCount: draft.homepageSettings.selectedBenefitIndexes.length,
+          processStepsCount: draft.homepageSettings.selectedProcessStepIndexes.length,
+          gallerySectionsCount: draft.homepageSettings.selectedGallerySectionIndexes.length,
+        },
         hero: {
           title: draft.hero.title,
           subtitle: draft.hero.subtitle,
@@ -766,100 +892,99 @@ export function AdminContentManager() {
               <SlidersHorizontal size={22} />
               <div>
                 <h3>Destaques da homepage</h3>
-                <p>Controla quantos itens aparecem na página inicial, sem alterar as páginas completas.</p>
+                <p>
+                  Escolhe exatamente quais itens aparecem na página inicial, sem
+                  alterar as páginas completas.
+                </p>
               </div>
             </div>
 
-            <div className="admin-two-fields">
-              <label>
-                Modelos na homepage
-                <small>Máximo disponível: {draft.models.length}</small>
-                <input
-                  type="number"
-                  min="0"
-                  max={draft.models.length}
-                  value={draft.homepageSettings.modelsCount}
-                  onChange={(event) =>
-                    updateHomepageSetting(
-                      'modelsCount',
-                      normalizeNumber(
-                        event.target.value,
-                        DEFAULT_HOMEPAGE_SETTINGS.modelsCount,
-                        0,
-                        draft.models.length
-                      )
-                    )
-                  }
-                />
-              </label>
+            <div className="admin-repeat-list">
+              <div className="admin-repeat-item">
+                <strong>Modelos em destaque na homepage</strong>
+                <small>
+                  Selecionados: {draft.homepageSettings.selectedModelIndexes.length} de{' '}
+                  {draft.models.length}
+                </small>
 
-              <label>
-                Vantagens na homepage
-                <small>Máximo disponível: {draft.benefits.length}</small>
-                <input
-                  type="number"
-                  min="0"
-                  max={draft.benefits.length}
-                  value={draft.homepageSettings.benefitsCount}
-                  onChange={(event) =>
-                    updateHomepageSetting(
-                      'benefitsCount',
-                      normalizeNumber(
-                        event.target.value,
-                        DEFAULT_HOMEPAGE_SETTINGS.benefitsCount,
-                        0,
-                        draft.benefits.length
-                      )
-                    )
-                  }
-                />
-              </label>
-            </div>
+                {draft.models.map((model, index) => (
+                  <label className="admin-homepage-selection-option" key={`homepage-model-${index}`}>
+                    <input
+                      type="checkbox"
+                      checked={isHomepageSelected('selectedModelIndexes', index)}
+                      onChange={() =>
+                        toggleHomepageSelection('selectedModelIndexes', index)
+                      }
+                    />
+                    {model.title || `Modelo ${index + 1}`}
+                  </label>
+                ))}
+              </div>
 
-            <div className="admin-two-fields">
-              <label>
-                Passos do processo na homepage
-                <small>Máximo disponível: {siteContent.process.steps.length}</small>
-                <input
-                  type="number"
-                  min="0"
-                  max={siteContent.process.steps.length}
-                  value={draft.homepageSettings.processStepsCount}
-                  onChange={(event) =>
-                    updateHomepageSetting(
-                      'processStepsCount',
-                      normalizeNumber(
-                        event.target.value,
-                        DEFAULT_HOMEPAGE_SETTINGS.processStepsCount,
-                        0,
-                        siteContent.process.steps.length
-                      )
-                    )
-                  }
-                />
-              </label>
+              <div className="admin-repeat-item">
+                <strong>Vantagens em destaque na homepage</strong>
+                <small>
+                  Selecionadas: {draft.homepageSettings.selectedBenefitIndexes.length} de{' '}
+                  {draft.benefits.length}
+                </small>
 
-              <label>
-                Secções da galeria na homepage
-                <small>Máximo disponível: {previewContent.galleryItems.length}</small>
-                <input
-                  type="number"
-                  min="0"
-                  max={previewContent.galleryItems.length}
-                  value={draft.homepageSettings.gallerySectionsCount}
-                  onChange={(event) =>
-                    updateHomepageSetting(
-                      'gallerySectionsCount',
-                      normalizeNumber(
-                        event.target.value,
-                        DEFAULT_HOMEPAGE_SETTINGS.gallerySectionsCount,
-                        0,
-                        previewContent.galleryItems.length
-                      )
-                    )
-                  }
-                />
-              </label>
+                {draft.benefits.map((benefit, index) => (
+                  <label className="admin-homepage-selection-option" key={`homepage-benefit-${index}`}>
+                    <input
+                      type="checkbox"
+                      checked={isHomepageSelected('selectedBenefitIndexes', index)}
+                      onChange={() =>
+                        toggleHomepageSelection('selectedBenefitIndexes', index)
+                      }
+                    />
+                    {benefit.title || `Vantagem ${index + 1}`}
+                  </label>
+                ))}
+              </div>
+
+              <div className="admin-repeat-item">
+                <strong>Passos do processo na homepage</strong>
+                <small>
+                  Selecionados:{' '}
+                  {draft.homepageSettings.selectedProcessStepIndexes.length} de{' '}
+                  {siteContent.process.steps.length}
+                </small>
+
+                {siteContent.process.steps.map((step, index) => (
+                  <label className="admin-homepage-selection-option" key={`homepage-process-${index}`}>
+                    <input
+                      type="checkbox"
+                      checked={isHomepageSelected('selectedProcessStepIndexes', index)}
+                      onChange={() =>
+                        toggleHomepageSelection('selectedProcessStepIndexes', index)
+                      }
+                    />
+                    {step.number}. {step.title}
+                  </label>
+                ))}
+              </div>
+
+              <div className="admin-repeat-item">
+                <strong>Secções da galeria na homepage</strong>
+                <small>
+                  Selecionadas:{' '}
+                  {draft.homepageSettings.selectedGallerySectionIndexes.length} de{' '}
+                  {previewContent.galleryItems.length}
+                </small>
+
+                {previewContent.galleryItems.map((item, index) => (
+                  <label className="admin-homepage-selection-option" key={`homepage-gallery-${index}`}>
+                    <input
+                      type="checkbox"
+                      checked={isHomepageSelected('selectedGallerySectionIndexes', index)}
+                      onChange={() =>
+                        toggleHomepageSelection('selectedGallerySectionIndexes', index)
+                      }
+                    />
+                    {item || `Secção ${index + 1}`}
+                  </label>
+                ))}
+              </div>
             </div>
 
             <label>

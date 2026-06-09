@@ -53,6 +53,10 @@ const DEFAULT_HOMEPAGE_SETTINGS = {
   benefitsCount: 4,
   processStepsCount: 3,
   gallerySectionsCount: 2,
+  selectedModelIndexes: [0, 1, 2, 3],
+  selectedBenefitIndexes: [0, 1, 2, 3],
+  selectedProcessStepIndexes: [0, 1, 2],
+  selectedGallerySectionIndexes: [0, 1],
   showQuestionsCard: true,
 };
 
@@ -72,6 +76,36 @@ function normalizeHomepageBoolean(value: unknown, fallback: boolean) {
   }
 
   return fallback;
+}
+
+function buildSequentialIndexes(count: number, max: number) {
+  return Array.from({ length: Math.min(Math.max(count, 0), max) }, (_, index) => index);
+}
+
+function normalizeHomepageIndexes(
+  value: unknown,
+  max: number,
+  fallbackIndexes: number[]
+) {
+  if (!Array.isArray(value)) {
+    return fallbackIndexes;
+  }
+
+  const uniqueIndexes = Array.from(
+    new Set(
+      value
+        .map((item) => Number(item))
+        .filter((item) => Number.isInteger(item) && item >= 0 && item < max)
+    )
+  );
+
+  return uniqueIndexes.length > 0 ? uniqueIndexes : fallbackIndexes;
+}
+
+function pickItemsByIndexes<T>(items: T[], indexes: number[]) {
+  return indexes
+    .map((index) => items[index])
+    .filter((item): item is T => Boolean(item));
 }
 
 const publicNavigation: Array<{ label: string; href: string }> = [
@@ -470,26 +504,51 @@ function App() {
   const homepageSettings = useMemo(() => {
     const rawSettings = contentPatch.homepageSettings || {};
 
+    const modelsCount = normalizeHomepageCount(
+      rawSettings.modelsCount,
+      DEFAULT_HOMEPAGE_SETTINGS.modelsCount,
+      content.models.length
+    );
+    const benefitsCount = normalizeHomepageCount(
+      rawSettings.benefitsCount,
+      DEFAULT_HOMEPAGE_SETTINGS.benefitsCount,
+      content.benefits.length
+    );
+    const processStepsCount = normalizeHomepageCount(
+      rawSettings.processStepsCount,
+      DEFAULT_HOMEPAGE_SETTINGS.processStepsCount,
+      content.process.steps.length
+    );
+    const gallerySectionsCount = normalizeHomepageCount(
+      rawSettings.gallerySectionsCount,
+      DEFAULT_HOMEPAGE_SETTINGS.gallerySectionsCount,
+      content.gallery.items.length
+    );
+
     return {
-      modelsCount: normalizeHomepageCount(
-        rawSettings.modelsCount,
-        DEFAULT_HOMEPAGE_SETTINGS.modelsCount,
-        content.models.length
+      modelsCount,
+      benefitsCount,
+      processStepsCount,
+      gallerySectionsCount,
+      selectedModelIndexes: normalizeHomepageIndexes(
+        rawSettings.selectedModelIndexes,
+        content.models.length,
+        buildSequentialIndexes(modelsCount, content.models.length)
       ),
-      benefitsCount: normalizeHomepageCount(
-        rawSettings.benefitsCount,
-        DEFAULT_HOMEPAGE_SETTINGS.benefitsCount,
-        content.benefits.length
+      selectedBenefitIndexes: normalizeHomepageIndexes(
+        rawSettings.selectedBenefitIndexes,
+        content.benefits.length,
+        buildSequentialIndexes(benefitsCount, content.benefits.length)
       ),
-      processStepsCount: normalizeHomepageCount(
-        rawSettings.processStepsCount,
-        DEFAULT_HOMEPAGE_SETTINGS.processStepsCount,
-        content.process.steps.length
+      selectedProcessStepIndexes: normalizeHomepageIndexes(
+        rawSettings.selectedProcessStepIndexes,
+        content.process.steps.length,
+        buildSequentialIndexes(processStepsCount, content.process.steps.length)
       ),
-      gallerySectionsCount: normalizeHomepageCount(
-        rawSettings.gallerySectionsCount,
-        DEFAULT_HOMEPAGE_SETTINGS.gallerySectionsCount,
-        content.gallery.items.length
+      selectedGallerySectionIndexes: normalizeHomepageIndexes(
+        rawSettings.selectedGallerySectionIndexes,
+        content.gallery.items.length,
+        buildSequentialIndexes(gallerySectionsCount, content.gallery.items.length)
       ),
       showQuestionsCard: normalizeHomepageBoolean(
         rawSettings.showQuestionsCard,
@@ -506,16 +565,19 @@ function App() {
 
   const whatsappMessage = encodeURIComponent(content.contact.whatsappMessage);
 
-  const modelsPreview = content.models.slice(0, homepageSettings.modelsCount);
-  const galleryPreviewItems = content.gallery.items.slice(
-    0,
-    homepageSettings.gallerySectionsCount
+  const modelsPreview = pickItemsByIndexes(
+    content.models,
+    homepageSettings.selectedModelIndexes
   );
-  const processPreviewSteps = content.process.steps.slice(
-    0,
-    homepageSettings.processStepsCount
+  const galleryPreviewIndexes = homepageSettings.selectedGallerySectionIndexes;
+  const processPreviewSteps = pickItemsByIndexes(
+    content.process.steps,
+    homepageSettings.selectedProcessStepIndexes
   );
-  const benefitsPreview = content.benefits.slice(0, homepageSettings.benefitsCount);
+  const benefitsPreview = pickItemsByIndexes(
+    content.benefits,
+    homepageSettings.selectedBenefitIndexes
+  );
 
   const closeMenu = () => setMenuOpen(false);
 
@@ -617,18 +679,24 @@ function App() {
   }
 
   function renderGalleryBlock(isFullPage = false) {
-    const itemsToRender = isFullPage ? content.gallery.items : galleryPreviewItems;
+    const indexesToRender = isFullPage
+      ? content.gallery.items.map((_, index) => index)
+      : galleryPreviewIndexes;
 
     return (
       <div className="gallery-sections-grid">
-        {itemsToRender.map((item, sectionIndex) => {
-          const originalIndex = content.gallery.items.indexOf(item);
+        {indexesToRender.map((originalIndex) => {
+          const item = content.gallery.items[originalIndex];
           const images = galleryImagesBySection[originalIndex] || [];
+
+          if (!item) {
+            return null;
+          }
 
           return (
             <article
               className="gallery-section-card"
-              key={`${item}-${sectionIndex}`}
+              key={`${item}-${originalIndex}`}
             >
               <div className="gallery-section-heading">
                 <div>
