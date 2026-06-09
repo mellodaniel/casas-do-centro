@@ -449,7 +449,7 @@ function App() {
 
   const whatsappMessage = encodeURIComponent(content.contact.whatsappMessage);
 
-  const galleryPreviewItems = content.gallery.items.slice(0, 4);
+  const galleryPreviewItems = content.gallery.items.slice(0, 2);
   const faqPreviewItems = content.faq.items.slice(0, 3);
   const processPreviewSteps = content.process.steps.slice(0, 3);
   const benefitsPreview = content.benefits.slice(0, 4);
@@ -834,7 +834,7 @@ function App() {
   function renderHomePage() {
     return (
       <>
-        <section id="inicio" className="hero">
+        <section id="inicio" className="hero hero-compact">
           <div className="container hero-content">
             <div className="hero-text">
               <span className="eyebrow">{content.hero.eyebrow}</span>
@@ -852,14 +852,6 @@ function App() {
                 <a href="#modelos" className="btn secondary">
                   {content.hero.secondaryButton}
                 </a>
-              </div>
-
-              <div className="hero-highlights">
-                {content.hero.highlights.map((highlight) => (
-                  <span key={highlight}>
-                    <CheckCircle size={18} /> {highlight}
-                  </span>
-                ))}
               </div>
             </div>
 
@@ -883,39 +875,44 @@ function App() {
           </div>
         </section>
 
-        <section id="sobre" className="section compact-section">
-          <div className="container two-columns">
-            <div>
-              <span className="section-label">{content.about.label}</span>
-              <h2>{content.about.title}</h2>
-            </div>
-
-            <div className="text-block">
-              <p>{content.about.paragraphs[0]}</p>
-              <p>{content.about.paragraphs[1]}</p>
-            </div>
+        <section className="home-trust-strip">
+          <div className="container home-trust-grid">
+            {content.hero.highlights.map((highlight) => (
+              <span key={highlight}>
+                <CheckCircle size={18} /> {highlight}
+              </span>
+            ))}
           </div>
         </section>
 
-        <section id="modelos" className="section soft-bg compact-section">
-          <div className="container">
-            <div className="section-heading section-heading-with-action">
-              <div>
-                <span className="section-label">{content.modelsSection.label}</span>
-                <h2>{content.modelsSection.title}</h2>
-                <p>{content.modelsSection.description}</p>
+        <section id="modelos" className="section compact-section">
+          <div className="container home-models-benefits-layout">
+            <div>
+              <span className="section-label">{content.modelsSection.label}</span>
+              <h2>{content.modelsSection.title}</h2>
+              <p className="home-section-intro">{content.modelsSection.description}</p>
+
+              <div className="home-mini-about">
+                <strong>{content.about.title}</strong>
+                <span>{content.about.paragraphs[0]}</span>
               </div>
+
+              <a href="/contacto" className="section-action-link inline-action">
+                Pedir proposta personalizada <ArrowRight size={18} />
+              </a>
             </div>
 
-            <div className="cards-grid">
+            <div className="home-models-grid">
               {content.models.map((model) => {
                 const Icon = model.icon;
 
                 return (
-                  <article className="card" key={model.title}>
-                    <Icon />
-                    <h3>{model.title}</h3>
-                    <p>{model.text}</p>
+                  <article className="home-model-card" key={model.title}>
+                    <Icon size={24} />
+                    <div>
+                      <h3>{model.title}</h3>
+                      <p>{model.text}</p>
+                    </div>
                   </article>
                 );
               })}
@@ -923,25 +920,31 @@ function App() {
           </div>
         </section>
 
-        <section id="vantagens" className="section compact-section">
+        <section id="vantagens" className="section soft-bg compact-section">
           <div className="container">
-            <div className="section-heading">
-              <span className="section-label">{content.benefitsSection.label}</span>
-              <h2>{content.benefitsSection.title}</h2>
-              <p>{content.benefitsSection.description}</p>
+            <div className="section-heading section-heading-with-action">
+              <div>
+                <span className="section-label">{content.benefitsSection.label}</span>
+                <h2>{content.benefitsSection.title}</h2>
+                <p>{content.benefitsSection.description}</p>
+              </div>
+
+              <a href="/duvidas" className="section-action-link">
+                Ver dúvidas frequentes <ArrowRight size={18} />
+              </a>
             </div>
 
-            <div className="benefits-grid benefits-grid-compact">
+            <div className="home-benefits-row">
               {benefitsPreview.map((benefit) => {
                 const Icon = benefit.icon;
 
                 return (
-                  <div className="benefit-card" key={benefit.title}>
-                    <div className="benefit-icon">
-                      <Icon />
+                  <div className="home-benefit-pill" key={benefit.title}>
+                    <Icon size={22} />
+                    <div>
+                      <strong>{benefit.title}</strong>
+                      <span>{benefit.text}</span>
                     </div>
-                    <h3>{benefit.title}</h3>
-                    <p>{benefit.text}</p>
                   </div>
                 );
               })}
@@ -950,8 +953,8 @@ function App() {
         </section>
 
         <section className="section process-section compact-section">
-          <div className="container">
-            <div className="section-heading">
+          <div className="container home-process-layout">
+            <div>
               <span className="section-label light">{content.process.label}</span>
               <h2>{content.process.title}</h2>
             </div>
@@ -968,46 +971,44 @@ function App() {
           </div>
         </section>
 
-        <section id="galeria" className="section soft-bg compact-section">
-          <div className="container">
-            <div className="section-heading section-heading-with-action">
-              <div>
-                <span className="section-label">{content.gallery.label}</span>
-                <h2>{content.gallery.title}</h2>
-                <p>{content.gallery.description}</p>
+        <section className="section compact-section">
+          <div className="container home-preview-split">
+            <div className="home-preview-card">
+              <div className="section-heading section-heading-with-action">
+                <div>
+                  <span className="section-label">{content.gallery.label}</span>
+                  <h2>Veja inspirações para o seu projeto.</h2>
+                  <p>{content.gallery.description}</p>
+                </div>
               </div>
 
-              <a href="/galeria" className="section-action-link">
+              {renderGalleryBlock(false)}
+
+              <a href="/galeria" className="section-action-link inline-action">
                 Ver galeria completa <ArrowRight size={18} />
               </a>
             </div>
 
-            {renderGalleryBlock(false)}
-          </div>
-        </section>
-
-        <section id="faq" className="section compact-section">
-          <div className="container faq-layout">
-            <div>
+            <div className="home-preview-card home-faq-preview-card">
               <span className="section-label">{content.faq.label}</span>
-              <h2>{content.faq.title}</h2>
+              <h2>Dúvidas antes de começar?</h2>
               <p>{content.faq.description}</p>
+
+              <div className="faq-list">
+                {faqPreviewItems.map((faq) => (
+                  <details key={faq.question} className="faq-item">
+                    <summary>
+                      <HelpCircle size={20} />
+                      {faq.question}
+                    </summary>
+                    <p>{faq.answer}</p>
+                  </details>
+                ))}
+              </div>
 
               <a href="/duvidas" className="section-action-link inline-action">
                 Ver todas as dúvidas <ArrowRight size={18} />
               </a>
-            </div>
-
-            <div className="faq-list">
-              {faqPreviewItems.map((faq) => (
-                <details key={faq.question} className="faq-item">
-                  <summary>
-                    <HelpCircle size={20} />
-                    {faq.question}
-                  </summary>
-                  <p>{faq.answer}</p>
-                </details>
-              ))}
             </div>
           </div>
         </section>
