@@ -24,26 +24,220 @@ import {
 import { createCrmLead } from './lib/crmService';
 
 type ContactFormState = {
-  name: string;
+  firstName: string;
+  lastName: string;
+  countryCode: string;
   phone: string;
   email: string;
-  location: string;
+  district: string;
+  county: string;
   projectType: string;
   hasLand: string;
   desiredArea: string;
   message: string;
 };
 
+type DistrictCountyOption = {
+  district: string;
+  counties: string[];
+};
+
 const emptyContactForm: ContactFormState = {
-  name: '',
+  firstName: '',
+  lastName: '',
+  countryCode: '+351',
   phone: '',
   email: '',
-  location: '',
+  district: '',
+  county: '',
   projectType: '',
   hasLand: '',
   desiredArea: '',
   message: '',
 };
+
+const countryPhoneRules: Record<
+  string,
+  {
+    label: string;
+    minDigits: number;
+    maxDigits: number;
+    example: string;
+  }
+> = {
+  '+351': {
+    label: 'Portugal',
+    minDigits: 9,
+    maxDigits: 9,
+    example: '912345678',
+  },
+  '+55': {
+    label: 'Brasil',
+    minDigits: 10,
+    maxDigits: 11,
+    example: '11999999999',
+  },
+  '+33': {
+    label: 'França',
+    minDigits: 9,
+    maxDigits: 9,
+    example: '612345678',
+  },
+  '+34': {
+    label: 'Espanha',
+    minDigits: 9,
+    maxDigits: 9,
+    example: '612345678',
+  },
+  '+352': {
+    label: 'Luxemburgo',
+    minDigits: 8,
+    maxDigits: 9,
+    example: '621123456',
+  },
+};
+
+const centerPortugalLocations: DistrictCountyOption[] = [
+  {
+    district: 'Aveiro',
+    counties: [
+      'Águeda',
+      'Albergaria-a-Velha',
+      'Anadia',
+      'Arouca',
+      'Aveiro',
+      'Castelo de Paiva',
+      'Espinho',
+      'Estarreja',
+      'Ílhavo',
+      'Mealhada',
+      'Murtosa',
+      'Oliveira de Azeméis',
+      'Oliveira do Bairro',
+      'Ovar',
+      'Santa Maria da Feira',
+      'São João da Madeira',
+      'Sever do Vouga',
+      'Vagos',
+      'Vale de Cambra',
+    ],
+  },
+  {
+    district: 'Castelo Branco',
+    counties: [
+      'Belmonte',
+      'Castelo Branco',
+      'Covilhã',
+      'Fundão',
+      'Idanha-a-Nova',
+      'Oleiros',
+      'Penamacor',
+      'Proença-a-Nova',
+      'Sertã',
+      'Vila de Rei',
+      'Vila Velha de Ródão',
+    ],
+  },
+  {
+    district: 'Coimbra',
+    counties: [
+      'Arganil',
+      'Cantanhede',
+      'Coimbra',
+      'Condeixa-a-Nova',
+      'Figueira da Foz',
+      'Góis',
+      'Lousã',
+      'Mira',
+      'Miranda do Corvo',
+      'Montemor-o-Velho',
+      'Oliveira do Hospital',
+      'Pampilhosa da Serra',
+      'Penacova',
+      'Penela',
+      'Soure',
+      'Tábua',
+      'Vila Nova de Poiares',
+    ],
+  },
+  {
+    district: 'Guarda',
+    counties: [
+      'Aguiar da Beira',
+      'Almeida',
+      'Celorico da Beira',
+      'Figueira de Castelo Rodrigo',
+      'Fornos de Algodres',
+      'Gouveia',
+      'Guarda',
+      'Manteigas',
+      'Mêda',
+      'Pinhel',
+      'Sabugal',
+      'Seia',
+      'Trancoso',
+      'Vila Nova de Foz Côa',
+    ],
+  },
+  {
+    district: 'Leiria',
+    counties: [
+      'Alcobaça',
+      'Alvaiázere',
+      'Ansião',
+      'Batalha',
+      'Bombarral',
+      'Caldas da Rainha',
+      'Castanheira de Pera',
+      'Figueiró dos Vinhos',
+      'Leiria',
+      'Marinha Grande',
+      'Nazaré',
+      'Óbidos',
+      'Pedrógão Grande',
+      'Peniche',
+      'Pombal',
+      'Porto de Mós',
+    ],
+  },
+  {
+    district: 'Santarém',
+    counties: [
+      'Abrantes',
+      'Alcanena',
+      'Constância',
+      'Entroncamento',
+      'Ferreira do Zêzere',
+      'Mação',
+      'Ourém',
+      'Sardoal',
+      'Tomar',
+      'Torres Novas',
+      'Vila Nova da Barquinha',
+    ],
+  },
+  {
+    district: 'Viseu',
+    counties: [
+      'Aguiar da Beira',
+      'Carregal do Sal',
+      'Castro Daire',
+      'Lamego',
+      'Mangualde',
+      'Mortágua',
+      'Nelas',
+      'Oliveira de Frades',
+      'Penalva do Castelo',
+      'Santa Comba Dão',
+      'São Pedro do Sul',
+      'Sátão',
+      'Tondela',
+      'Vila Nova de Paiva',
+      'Viseu',
+      'Vouzela',
+    ],
+  },
+];
 
 function normalizeGalleryImagesBySection(patch: ContentPatch, sectionCount: number) {
   if (Array.isArray(patch.galleryImagesUrlsBySection)) {
@@ -71,6 +265,111 @@ function normalizeGalleryImagesBySection(patch: ContentPatch, sectionCount: numb
   }
 
   return Array.from({ length: sectionCount }, () => []);
+}
+
+function hasOnlyDigits(value: string) {
+  return /^[0-9]+$/.test(value);
+}
+
+function isValidEmail(email: string) {
+  const normalizedEmail = email.trim();
+
+  if (!normalizedEmail) {
+    return true;
+  }
+
+  if (normalizedEmail.includes(' ')) {
+    return false;
+  }
+
+  if (normalizedEmail.includes('..')) {
+    return false;
+  }
+
+  const emailRegex = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i;
+
+  if (!emailRegex.test(normalizedEmail)) {
+    return false;
+  }
+
+  const emailParts = normalizedEmail.split('@');
+
+  if (emailParts.length !== 2) {
+    return false;
+  }
+
+  const [localPart, domainPart] = emailParts;
+
+  if (!localPart || !domainPart) {
+    return false;
+  }
+
+  if (
+    localPart.startsWith('.') ||
+    localPart.endsWith('.') ||
+    domainPart.startsWith('.') ||
+    domainPart.endsWith('.')
+  ) {
+    return false;
+  }
+
+  const domainParts = domainPart.split('.');
+
+  if (domainParts.length < 2) {
+    return false;
+  }
+
+  return domainParts.every((part) => {
+    return part.length > 0 && !part.startsWith('-') && !part.endsWith('-');
+  });
+}
+
+function isValidPhone(countryCode: string, phone: string) {
+  const normalizedPhone = phone.trim();
+  const rule = countryPhoneRules[countryCode];
+
+  if (!normalizedPhone) {
+    return false;
+  }
+
+  if (!hasOnlyDigits(normalizedPhone)) {
+    return false;
+  }
+
+  if (!rule) {
+    return normalizedPhone.length >= 8 && normalizedPhone.length <= 15;
+  }
+
+  return (
+    normalizedPhone.length >= rule.minDigits &&
+    normalizedPhone.length <= rule.maxDigits
+  );
+}
+
+function isValidDesiredArea(value: string) {
+  if (!value.trim()) {
+    return true;
+  }
+
+  const normalizedValue = value.trim().toLowerCase();
+
+  return /^\d{1,4}\s?(m2|m²|metros quadrados)$/.test(normalizedValue);
+}
+
+function formatPhoneForStorage(countryCode: string, phone: string) {
+  return `${countryCode} ${phone.trim()}`;
+}
+
+function formatLocationForStorage(district: string, county: string) {
+  if (!district && !county) {
+    return '';
+  }
+
+  if (district && county) {
+    return `${district} / ${county}`;
+  }
+
+  return district || county;
 }
 
 function App() {
@@ -108,6 +407,12 @@ function App() {
     [contentPatch, content.gallery.items.length]
   );
 
+  const selectedDistrict = centerPortugalLocations.find(
+    (item) => item.district === contactForm.district
+  );
+
+  const phoneRule = countryPhoneRules[contactForm.countryCode];
+
   const whatsappMessage = encodeURIComponent(content.contact.whatsappMessage);
 
   const closeMenu = () => setMenuOpen(false);
@@ -119,7 +424,50 @@ function App() {
     setContactForm((current) => ({
       ...current,
       [field]: value,
+      ...(field === 'district' ? { county: '' } : {}),
     }));
+  }
+
+  function validateContactForm() {
+    if (!contactForm.firstName.trim()) {
+      return 'Por favor, indique o nome.';
+    }
+
+    if (!contactForm.lastName.trim()) {
+      return 'Por favor, indique o apelido.';
+    }
+
+    if (!contactForm.phone.trim()) {
+      return 'Por favor, indique o telefone.';
+    }
+
+    if (!isValidPhone(contactForm.countryCode, contactForm.phone)) {
+      const exampleText = phoneRule
+        ? phoneRule.minDigits === phoneRule.maxDigits
+          ? ` Para ${phoneRule.label}, o número deve ter exatamente ${phoneRule.minDigits} dígitos. Exemplo: ${phoneRule.example}.`
+          : ` Para ${phoneRule.label}, o número deve ter entre ${phoneRule.minDigits} e ${phoneRule.maxDigits} dígitos. Exemplo: ${phoneRule.example}.`
+        : ' Confirme se o número tem entre 8 e 15 dígitos.';
+
+      return `O telefone deve conter apenas números, sem letras, espaços ou símbolos.${exampleText}`;
+    }
+
+    if (!isValidEmail(contactForm.email)) {
+      return 'O email não é válido. Confirme se tem o formato correto, por exemplo: nome@email.com';
+    }
+
+    if (!contactForm.district.trim()) {
+      return 'Por favor, selecione o distrito.';
+    }
+
+    if (!contactForm.county.trim()) {
+      return 'Por favor, selecione o concelho.';
+    }
+
+    if (!isValidDesiredArea(contactForm.desiredArea)) {
+      return 'A área aproximada deve seguir o formato: 80 m², 100 m² ou 120 m2.';
+    }
+
+    return '';
   }
 
   async function handleContactSubmit(event: FormEvent<HTMLFormElement>) {
@@ -128,9 +476,11 @@ function App() {
     setContactStatusMessage('');
     setContactStatusType('');
 
-    if (!contactForm.name.trim() || !contactForm.phone.trim()) {
+    const validationMessage = validateContactForm();
+
+    if (validationMessage) {
       setContactStatusType('error');
-      setContactStatusMessage('Por favor, indique pelo menos o nome e o telefone.');
+      setContactStatusMessage(validationMessage);
       return;
     }
 
@@ -138,10 +488,10 @@ function App() {
 
     try {
       await createCrmLead({
-        name: contactForm.name,
-        phone: contactForm.phone,
-        email: contactForm.email,
-        location: contactForm.location,
+        name: `${contactForm.firstName.trim()} ${contactForm.lastName.trim()}`,
+        phone: formatPhoneForStorage(contactForm.countryCode, contactForm.phone),
+        email: contactForm.email.trim(),
+        location: formatLocationForStorage(contactForm.district, contactForm.county),
         project_type: contactForm.projectType,
         has_land: contactForm.hasLand,
         desired_area: contactForm.desiredArea,
@@ -152,7 +502,7 @@ function App() {
       setContactForm(emptyContactForm);
       setContactStatusType('success');
       setContactStatusMessage(
-        'Pedido enviado com sucesso. Entraremos em contacto brevemente.'
+        'Pedido enviado com sucesso. Os seus dados foram recebidos e entraremos em contacto brevemente.'
       );
     } catch {
       setContactStatusType('error');
@@ -474,18 +824,53 @@ function App() {
                 <input
                   type="text"
                   placeholder="Nome"
-                  value={contactForm.name}
+                  value={contactForm.firstName}
                   onChange={(event) =>
-                    updateContactFormField('name', event.target.value)
+                    updateContactFormField('firstName', event.target.value)
                   }
                   required
                 />
+
+                <input
+                  type="text"
+                  placeholder="Apelido"
+                  value={contactForm.lastName}
+                  onChange={(event) =>
+                    updateContactFormField('lastName', event.target.value)
+                  }
+                  required
+                />
+              </div>
+
+              <div className="form-row">
+                <select
+                  value={contactForm.countryCode}
+                  onChange={(event) =>
+                    updateContactFormField('countryCode', event.target.value)
+                  }
+                >
+                  {Object.entries(countryPhoneRules).map(([code, rule]) => (
+                    <option key={code} value={code}>
+                      {code} — {rule.label}
+                    </option>
+                  ))}
+                </select>
+
                 <input
                   type="tel"
-                  placeholder="Telefone"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  placeholder={
+                    phoneRule
+                      ? `Telefone. Ex: ${phoneRule.example}`
+                      : 'Telefone'
+                  }
                   value={contactForm.phone}
                   onChange={(event) =>
-                    updateContactFormField('phone', event.target.value)
+                    updateContactFormField(
+                      'phone',
+                      event.target.value.replace(/\D/g, '')
+                    )
                   }
                   required
                 />
@@ -493,21 +878,49 @@ function App() {
 
               <input
                 type="email"
-                placeholder="Email"
+                placeholder="Email. Ex: nome@email.com"
                 value={contactForm.email}
                 onChange={(event) =>
                   updateContactFormField('email', event.target.value)
                 }
               />
 
-              <input
-                type="text"
-                placeholder="Localidade do projeto"
-                value={contactForm.location}
-                onChange={(event) =>
-                  updateContactFormField('location', event.target.value)
-                }
-              />
+              <div className="form-row">
+                <select
+                  value={contactForm.district}
+                  onChange={(event) =>
+                    updateContactFormField('district', event.target.value)
+                  }
+                  required
+                >
+                  <option value="" disabled>
+                    Distrito
+                  </option>
+                  {centerPortugalLocations.map((item) => (
+                    <option key={item.district} value={item.district}>
+                      {item.district}
+                    </option>
+                  ))}
+                </select>
+
+                <select
+                  value={contactForm.county}
+                  onChange={(event) =>
+                    updateContactFormField('county', event.target.value)
+                  }
+                  required
+                  disabled={!contactForm.district}
+                >
+                  <option value="" disabled>
+                    Concelho
+                  </option>
+                  {selectedDistrict?.counties.map((county) => (
+                    <option key={county} value={county}>
+                      {county}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
               <select
                 value={contactForm.projectType}
@@ -541,7 +954,7 @@ function App() {
 
               <input
                 type="text"
-                placeholder="Área aproximada pretendida"
+                placeholder="Área aproximada pretendida. Ex: 80 m²"
                 value={contactForm.desiredArea}
                 onChange={(event) =>
                   updateContactFormField('desiredArea', event.target.value)
