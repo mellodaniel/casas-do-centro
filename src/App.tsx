@@ -5,6 +5,7 @@ import {
   Mail,
   MapPin,
   MessageCircle,
+  Instagram,
   Leaf,
   Images,
   CheckCircle,
@@ -41,6 +42,8 @@ type DistrictCountyOption = {
   district: string;
   counties: string[];
 };
+
+const INSTAGRAM_URL = 'https://www.instagram.com/casasdocentro/';
 
 const emptyContactForm: ContactFormState = {
   firstName: '',
@@ -540,6 +543,7 @@ function App() {
                 {item.label}
               </a>
             ))}
+
             <a href="#contacto" className="nav-cta" onClick={closeMenu}>
               Pedir orçamento
             </a>
@@ -805,6 +809,16 @@ function App() {
                 <MessageCircle size={22} />
                 Falar pelo WhatsApp
               </a>
+
+              <a
+                className="whatsapp-link"
+                href={INSTAGRAM_URL}
+                target="_blank"
+                rel="noreferrer"
+              >
+                <Instagram size={22} />
+                Seguir no Instagram
+              </a>
             </div>
 
             <form className="contact-form" onSubmit={handleContactSubmit}>
@@ -986,13 +1000,19 @@ function App() {
         <div className="container footer-content">
           <img src={logo} alt={content.company.name} />
           <p>{content.company.slogan}</p>
+
           <div className="footer-links">
             {content.navigation.map((item) => (
               <a key={item.href} href={item.href}>
                 {item.label}
               </a>
             ))}
+
+            <a href={INSTAGRAM_URL} target="_blank" rel="noreferrer">
+              Instagram
+            </a>
           </div>
+
           <small>{content.footer.copyright}</small>
         </div>
       </footer>
@@ -1006,11 +1026,23 @@ function App() {
       </a>
 
       <a
+        className="floating-instagram"
+        href={INSTAGRAM_URL}
+        target="_blank"
+        rel="noreferrer"
+        aria-label="Seguir no Instagram"
+        title="Seguir no Instagram"
+      >
+        <Instagram size={28} />
+      </a>
+
+      <a
         className="floating-whatsapp"
         href={`https://wa.me/${content.contact.whatsappNumber}?text=${whatsappMessage}`}
         target="_blank"
         rel="noreferrer"
         aria-label="Falar pelo WhatsApp"
+        title="Falar pelo WhatsApp"
       >
         <MessageCircle size={28} />
       </a>
