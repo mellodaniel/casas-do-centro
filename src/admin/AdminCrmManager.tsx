@@ -2,7 +2,6 @@ import type { FormEvent } from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import {
   ClipboardList,
-  Plus,
   RefreshCcw,
   Save,
   UserRound,
@@ -18,6 +17,8 @@ import {
   AlertCircle,
   History,
   ArrowRightLeft,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import {
   createCrmFollowUp,
@@ -179,6 +180,7 @@ export function AdminCrmManager() {
   const [currentPage, setCurrentPage] = useState(1);
   const [form, setForm] = useState<NewLeadForm>(emptyLeadForm);
   const [expandedLeadId, setExpandedLeadId] = useState<string | null>(null);
+  const [isManualFormOpen, setIsManualFormOpen] = useState(false);
   const [followUpForms, setFollowUpForms] = useState<Record<string, FollowUpForm>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -347,6 +349,7 @@ export function AdminCrmManager() {
       });
 
       setForm(emptyLeadForm);
+      setIsManualFormOpen(false);
       await loadLeads(statusFilter);
       setStatusType('success');
       setStatusMessage('Pedido criado com sucesso.');
@@ -382,10 +385,7 @@ export function AdminCrmManager() {
         changed_by_user_id: currentProfile?.auth_user_id,
       });
 
-      await Promise.all([
-        loadLeads(statusFilter),
-        loadStatusHistory(lead.id),
-      ]);
+      await Promise.all([loadLeads(statusFilter), loadStatusHistory(lead.id)]);
 
       setStatusType('success');
       setStatusMessage('Estado do pedido atualizado e registado no histórico.');
@@ -402,7 +402,12 @@ export function AdminCrmManager() {
 
     setExpandedLeadId(nextExpandedLeadId);
 
-    if (nextExpandedLeadId && !followUpsByLeadId[lead.id]) {
+    if (!nextExpandedLeadId) {
+      setVisibleStatusHistoryLeadId(null);
+      return;
+    }
+
+    if (!followUpsByLeadId[lead.id]) {
       await loadFollowUps(lead.id);
     }
   }
@@ -538,111 +543,131 @@ export function AdminCrmManager() {
         </div>
       </div>
 
-      <form className="admin-crm-form" onSubmit={handleCreateLead}>
+      <div className="admin-crm-form">
         <div className="admin-users-form-heading">
           <div>
             <strong>Novo pedido manual</strong>
-            <p>Regista manualmente um contacto recebido por telefone, WhatsApp ou email.</p>
+            <p>
+              Regista manualmente um contacto recebido por telefone, WhatsApp ou
+              email.
+            </p>
           </div>
-          <Plus size={22} />
+
+          <button
+            type="button"
+            className="admin-secondary-button"
+            onClick={() => setIsManualFormOpen((current) => !current)}
+          >
+            {isManualFormOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+            {isManualFormOpen ? 'Recolher' : 'Abrir formulário'}
+          </button>
         </div>
 
-        <div className="admin-two-fields">
-          <label>
-            Nome
-            <input
-              value={form.name}
-              onChange={(event) => updateFormField('name', event.target.value)}
-              placeholder="Nome do cliente"
-              required
-            />
-          </label>
+        {isManualFormOpen && (
+          <form onSubmit={handleCreateLead}>
+            <div className="admin-two-fields">
+              <label>
+                Nome
+                <input
+                  value={form.name}
+                  onChange={(event) => updateFormField('name', event.target.value)}
+                  placeholder="Nome do cliente"
+                  required
+                />
+              </label>
 
-          <label>
-            Telefone
-            <input
-              value={form.phone}
-              onChange={(event) => updateFormField('phone', event.target.value)}
-              placeholder="Telefone ou WhatsApp"
-              required
-            />
-          </label>
-        </div>
+              <label>
+                Telefone
+                <input
+                  value={form.phone}
+                  onChange={(event) => updateFormField('phone', event.target.value)}
+                  placeholder="Telefone ou WhatsApp"
+                  required
+                />
+              </label>
+            </div>
 
-        <div className="admin-two-fields">
-          <label>
-            Email
-            <input
-              type="email"
-              value={form.email}
-              onChange={(event) => updateFormField('email', event.target.value)}
-              placeholder="Email do cliente"
-            />
-          </label>
+            <div className="admin-two-fields">
+              <label>
+                Email
+                <input
+                  type="email"
+                  value={form.email}
+                  onChange={(event) => updateFormField('email', event.target.value)}
+                  placeholder="Email do cliente"
+                />
+              </label>
 
-          <label>
-            Localidade
-            <input
-              value={form.location}
-              onChange={(event) => updateFormField('location', event.target.value)}
-              placeholder="Ex: Leiria, Pombal, Coimbra"
-            />
-          </label>
-        </div>
+              <label>
+                Localidade
+                <input
+                  value={form.location}
+                  onChange={(event) => updateFormField('location', event.target.value)}
+                  placeholder="Ex: Leiria, Pombal, Coimbra"
+                />
+              </label>
+            </div>
 
-        <div className="admin-two-fields">
-          <label>
-            Tipo de projeto
-            <input
-              value={form.project_type}
-              onChange={(event) => updateFormField('project_type', event.target.value)}
-              placeholder="Ex: Casa T2, T3, turismo, anexo"
-            />
-          </label>
+            <div className="admin-two-fields">
+              <label>
+                Tipo de projeto
+                <input
+                  value={form.project_type}
+                  onChange={(event) =>
+                    updateFormField('project_type', event.target.value)
+                  }
+                  placeholder="Ex: Casa T2, T3, turismo, anexo"
+                />
+              </label>
 
-          <label>
-            Já tem terreno?
-            <select
-              value={form.has_land}
-              onChange={(event) => updateFormField('has_land', event.target.value)}
-            >
-              <option value="">Não indicado</option>
-              <option value="Sim">Sim</option>
-              <option value="Não">Não</option>
-              <option value="Em análise">Em análise</option>
-            </select>
-          </label>
-        </div>
+              <label>
+                Já tem terreno?
+                <select
+                  value={form.has_land}
+                  onChange={(event) => updateFormField('has_land', event.target.value)}
+                >
+                  <option value="">Não indicado</option>
+                  <option value="Sim">Sim</option>
+                  <option value="Não">Não</option>
+                  <option value="Em análise">Em análise</option>
+                </select>
+              </label>
+            </div>
 
-        <label>
-          Área pretendida
-          <input
-            value={form.desired_area}
-            onChange={(event) => updateFormField('desired_area', event.target.value)}
-            placeholder="Ex: 80m², 100m², ainda não sabe"
-          />
-        </label>
+            <label>
+              Área pretendida
+              <input
+                value={form.desired_area}
+                onChange={(event) => updateFormField('desired_area', event.target.value)}
+                placeholder="Ex: 80m², 100m², ainda não sabe"
+              />
+            </label>
 
-        <label>
-          Mensagem
-          <textarea
-            rows={4}
-            value={form.message}
-            onChange={(event) => updateFormField('message', event.target.value)}
-            placeholder="Resumo do pedido"
-          />
-        </label>
+            <label>
+              Mensagem
+              <textarea
+                rows={4}
+                value={form.message}
+                onChange={(event) => updateFormField('message', event.target.value)}
+                placeholder="Resumo do pedido"
+              />
+            </label>
 
-        <button type="submit" className="admin-save-button" disabled={isSaving}>
-          <Save size={20} />
-          {isSaving ? 'A guardar...' : 'Criar pedido'}
-        </button>
-      </form>
+            <button type="submit" className="admin-save-button" disabled={isSaving}>
+              <Save size={20} />
+              {isSaving ? 'A guardar...' : 'Criar pedido'}
+            </button>
+          </form>
+        )}
+      </div>
 
       <div className="admin-users-list-header">
         <div>
           <strong>Pedidos existentes</strong>
-          <p>Lista de contactos e oportunidades comerciais.</p>
+          <p>
+            Lista de contactos e oportunidades comerciais. Cada pedido pode ser
+            aberto para ver detalhes, histórico e follow-ups.
+          </p>
         </div>
 
         <div className="admin-crm-actions">
@@ -716,7 +741,7 @@ export function AdminCrmManager() {
 
                       <div>
                         <strong>{lead.name}</strong>
-                        <span>{formatDate(lead.created_at)}</span>
+                        <span>Pedido em {formatDate(lead.created_at)}</span>
                       </div>
                     </div>
 
@@ -725,344 +750,351 @@ export function AdminCrmManager() {
                         {leadStatusLabels[lead.status]}
                       </span>
 
-                      <span className="admin-crm-origin">
-                        {leadOriginLabels[lead.origin] || 'Origem desconhecida'}
-                      </span>
-
-                      {lead.next_follow_up_at && (
-                        <span
-                          className={
-                            overdue
-                              ? 'admin-crm-origin admin-crm-followup-overdue'
-                              : 'admin-crm-origin admin-crm-followup-scheduled'
-                          }
-                        >
-                          {overdue ? (
-                            <AlertCircle size={14} />
-                          ) : (
-                            <CalendarDays size={14} />
-                          )}
-                          {overdue ? 'Atrasado' : 'Próximo'}:{' '}
-                          {formatDate(lead.next_follow_up_at)}
-                        </span>
-                      )}
-
-                      <select
-                        value={lead.status}
-                        onChange={(event) =>
-                          handleChangeStatus(lead, event.target.value as LeadStatus)
-                        }
-                        disabled={isSaving}
-                      >
-                        {leadStatusOptions
-                          .filter((option) => option.value !== 'todos')
-                          .map((option) => (
-                            <option key={option.value} value={option.value}>
-                              {option.label}
-                            </option>
-                          ))}
-                      </select>
-
-                      <button
-                        type="button"
-                        className="admin-secondary-button"
-                        onClick={() => handleToggleStatusHistory(lead)}
-                      >
-                        <History size={17} />
-                        {isStatusHistoryVisible
-                          ? 'Fechar histórico'
-                          : 'Histórico de estado'}
-                      </button>
-
                       <button
                         type="button"
                         className="admin-secondary-button"
                         onClick={() => handleToggleLeadDetails(lead)}
                       >
-                        {isExpanded ? 'Fechar' : 'Detalhes'}
+                        {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                        {isExpanded ? 'Recolher' : 'Abrir'}
                       </button>
                     </div>
                   </div>
 
-                  <div className="admin-crm-lead-info">
-                    <span>
-                      <Phone size={15} />
-                      {lead.phone}
-                    </span>
-
-                    {lead.email && (
-                      <span>
-                        <Mail size={15} />
-                        {lead.email}
-                      </span>
-                    )}
-
-                    {lead.location && (
-                      <span>
-                        <MapPin size={15} />
-                        {lead.location}
-                      </span>
-                    )}
-                  </div>
-
-                  {isStatusHistoryVisible && (
-                    <div className="admin-crm-history admin-crm-status-history-box">
-                      <div className="admin-crm-history-heading">
-                        <History size={20} />
-                        <div>
-                          <strong>Histórico de estado</strong>
-                          <p>
-                            {statusHistory.length === 0
-                              ? 'Ainda não existem alterações de estado registadas.'
-                              : `${statusHistory.length} ${
-                                  statusHistory.length === 1
-                                    ? 'alteração encontrada'
-                                    : 'alterações encontradas'
-                                }`}
-                          </p>
-                        </div>
-                      </div>
-
-                      {statusHistory.length > 0 && (
-                        <div className="admin-crm-history-list">
-                          {statusHistory.map((item) => (
-                            <div
-                              className="admin-crm-history-item"
-                              key={item.id}
-                            >
-                              <div className="admin-crm-history-meta">
-                                <span>
-                                  <ArrowRightLeft size={14} />
-                                  Alteração de estado
-                                </span>
-                                <small>{formatDate(item.created_at)}</small>
-                              </div>
-
-                              <div className="admin-crm-status-change-line">
-                                <div>
-                                  <strong>Estado anterior</strong>
-                                  <span>
-                                    {item.previous_status
-                                      ? leadStatusLabels[item.previous_status]
-                                      : 'Sem estado anterior'}
-                                  </span>
-                                </div>
-
-                                <div>
-                                  <strong>Novo estado</strong>
-                                  <span>{leadStatusLabels[item.new_status]}</span>
-                                </div>
-                              </div>
-
-                              <small>
-                                Alterado por:{' '}
-                                {item.changed_by || 'Utilizador não identificado'}
-                              </small>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )}
-
                   {isExpanded && (
-                    <div className="admin-crm-lead-details">
-                      <div className="admin-crm-detail-grid">
-                        <div>
-                          <strong>Tipo de projeto</strong>
-                          <span>{lead.project_type || 'Não indicado'}</span>
-                        </div>
+                    <>
+                      <div className="admin-crm-lead-info">
+                        <span>
+                          <Phone size={15} />
+                          {lead.phone}
+                        </span>
 
-                        <div>
-                          <strong>Tem terreno?</strong>
-                          <span>{lead.has_land || 'Não indicado'}</span>
-                        </div>
-
-                        <div>
-                          <strong>Área pretendida</strong>
-                          <span>{lead.desired_area || 'Não indicado'}</span>
-                        </div>
-
-                        <div>
-                          <strong>Última atualização</strong>
-                          <span>{formatDate(lead.updated_at)}</span>
-                        </div>
-
-                        <div>
-                          <strong>Próximo follow-up</strong>
+                        {lead.email && (
                           <span>
-                            {lead.next_follow_up_at
-                              ? formatDate(lead.next_follow_up_at)
-                              : 'Sem data agendada'}
+                            <Mail size={15} />
+                            {lead.email}
                           </span>
-                        </div>
+                        )}
 
-                        <div>
-                          <strong>Cliente fechado em</strong>
+                        {lead.location && (
                           <span>
-                            {lead.closed_at ? formatDateOnly(lead.closed_at) : '—'}
+                            <MapPin size={15} />
+                            {lead.location}
                           </span>
-                        </div>
+                        )}
 
-                        <div>
-                          <strong>Pedido executado em</strong>
-                          <span>
-                            {lead.executed_at ? formatDateOnly(lead.executed_at) : '—'}
+                        <span className="admin-crm-origin">
+                          {leadOriginLabels[lead.origin] || 'Origem desconhecida'}
+                        </span>
+
+                        {lead.next_follow_up_at && (
+                          <span
+                            className={
+                              overdue
+                                ? 'admin-crm-origin admin-crm-followup-overdue'
+                                : 'admin-crm-origin admin-crm-followup-scheduled'
+                            }
+                          >
+                            {overdue ? (
+                              <AlertCircle size={14} />
+                            ) : (
+                              <CalendarDays size={14} />
+                            )}
+                            {overdue ? 'Atrasado' : 'Próximo'}:{' '}
+                            {formatDate(lead.next_follow_up_at)}
                           </span>
-                        </div>
-
-                        <div>
-                          <strong>Origem</strong>
-                          <span>{leadOriginLabels[lead.origin] || '—'}</span>
-                        </div>
+                        )}
                       </div>
 
-                      <div className="admin-crm-message-box">
-                        <strong>Mensagem do cliente</strong>
-                        <p>{lead.message || 'Sem mensagem.'}</p>
-                      </div>
-
-                      <div className="admin-crm-followup-box">
-                        <div className="admin-crm-followup-title">
-                          <MessageSquareText size={20} />
-                          <div>
-                            <strong>Novo follow-up</strong>
-                            <p>
-                              Regista cada contacto feito com este cliente. O histórico
-                              fica guardado com data, hora e utilizador.
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="admin-two-fields">
-                          <label>
-                            Tipo de contacto
-                            <select
-                              value={currentFollowUpForm.contact_type}
-                              onChange={(event) =>
-                                updateFollowUpFormField(
-                                  lead.id,
-                                  'contact_type',
-                                  event.target.value as FollowUpContactType
-                                )
-                              }
-                            >
-                              {followUpContactTypeOptions.map((option) => (
-                                <option key={option.value} value={option.value}>
-                                  {option.label}
-                                </option>
-                              ))}
-                            </select>
-                          </label>
-
-                          <label>
-                            Data da próxima ação
-                            <input
-                              type="datetime-local"
-                              value={currentFollowUpForm.next_action_date}
-                              onChange={(event) =>
-                                updateFollowUpFormField(
-                                  lead.id,
-                                  'next_action_date',
-                                  event.target.value
-                                )
-                              }
-                            />
-                          </label>
-                        </div>
-
-                        <label>
-                          Próxima ação
-                          <input
-                            value={currentFollowUpForm.next_action}
-                            onChange={(event) =>
-                              updateFollowUpFormField(
-                                lead.id,
-                                'next_action',
-                                event.target.value
-                              )
-                            }
-                            placeholder="Ex: Ligar amanhã, enviar orçamento, aguardar resposta"
-                          />
-                        </label>
-
-                        <label>
-                          Nota do follow-up
-                          <textarea
-                            rows={5}
-                            value={currentFollowUpForm.note}
-                            onChange={(event) =>
-                              updateFollowUpFormField(lead.id, 'note', event.target.value)
-                            }
-                            placeholder="Ex: Contacto realizado. Cliente demonstrou interesse em casa T3..."
-                          />
-                        </label>
+                      <div className="admin-crm-expanded-actions">
+                        <select
+                          value={lead.status}
+                          onChange={(event) =>
+                            handleChangeStatus(lead, event.target.value as LeadStatus)
+                          }
+                          disabled={isSaving}
+                        >
+                          {leadStatusOptions
+                            .filter((option) => option.value !== 'todos')
+                            .map((option) => (
+                              <option key={option.value} value={option.value}>
+                                {option.label}
+                              </option>
+                            ))}
+                        </select>
 
                         <button
                           type="button"
-                          className="admin-save-button"
-                          onClick={() => handleCreateFollowUp(lead)}
-                          disabled={isSaving}
+                          className="admin-secondary-button"
+                          onClick={() => handleToggleStatusHistory(lead)}
                         >
-                          <Save size={18} />
-                          Guardar follow-up
+                          <History size={17} />
+                          {isStatusHistoryVisible
+                            ? 'Fechar histórico de estado'
+                            : 'Histórico de estado'}
                         </button>
                       </div>
 
-                      <div className="admin-crm-history">
-                        <div className="admin-crm-history-heading">
-                          <Clock size={20} />
+                      {isStatusHistoryVisible && (
+                        <div className="admin-crm-history admin-crm-status-history-box">
+                          <div className="admin-crm-history-heading">
+                            <History size={20} />
+                            <div>
+                              <strong>Histórico de estado</strong>
+                              <p>
+                                {statusHistory.length === 0
+                                  ? 'Ainda não existem alterações de estado registadas.'
+                                  : `${statusHistory.length} ${
+                                      statusHistory.length === 1
+                                        ? 'alteração encontrada'
+                                        : 'alterações encontradas'
+                                    }`}
+                              </p>
+                            </div>
+                          </div>
+
+                          {statusHistory.length > 0 && (
+                            <div className="admin-crm-history-list">
+                              {statusHistory.map((item) => (
+                                <div className="admin-crm-history-item" key={item.id}>
+                                  <div className="admin-crm-history-meta">
+                                    <span>
+                                      <ArrowRightLeft size={14} />
+                                      Alteração de estado
+                                    </span>
+                                    <small>{formatDate(item.created_at)}</small>
+                                  </div>
+
+                                  <div className="admin-crm-status-change-line">
+                                    <div>
+                                      <strong>Estado anterior</strong>
+                                      <span>
+                                        {item.previous_status
+                                          ? leadStatusLabels[item.previous_status]
+                                          : 'Sem estado anterior'}
+                                      </span>
+                                    </div>
+
+                                    <div>
+                                      <strong>Novo estado</strong>
+                                      <span>{leadStatusLabels[item.new_status]}</span>
+                                    </div>
+                                  </div>
+
+                                  <small>
+                                    Alterado por:{' '}
+                                    {item.changed_by || 'Utilizador não identificado'}
+                                  </small>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      <div className="admin-crm-lead-details">
+                        <div className="admin-crm-detail-grid">
                           <div>
-                            <strong>Histórico de follow-ups</strong>
-                            <p>
-                              {followUps.length === 0
-                                ? 'Ainda não existem follow-ups registados.'
-                                : `${followUps.length} ${
-                                    followUps.length === 1
-                                      ? 'registo encontrado'
-                                      : 'registos encontrados'
-                                  }`}
-                            </p>
+                            <strong>Tipo de projeto</strong>
+                            <span>{lead.project_type || 'Não indicado'}</span>
+                          </div>
+
+                          <div>
+                            <strong>Tem terreno?</strong>
+                            <span>{lead.has_land || 'Não indicado'}</span>
+                          </div>
+
+                          <div>
+                            <strong>Área pretendida</strong>
+                            <span>{lead.desired_area || 'Não indicado'}</span>
+                          </div>
+
+                          <div>
+                            <strong>Última atualização</strong>
+                            <span>{formatDate(lead.updated_at)}</span>
+                          </div>
+
+                          <div>
+                            <strong>Próximo follow-up</strong>
+                            <span>
+                              {lead.next_follow_up_at
+                                ? formatDate(lead.next_follow_up_at)
+                                : 'Sem data agendada'}
+                            </span>
+                          </div>
+
+                          <div>
+                            <strong>Cliente fechado em</strong>
+                            <span>
+                              {lead.closed_at ? formatDateOnly(lead.closed_at) : '—'}
+                            </span>
+                          </div>
+
+                          <div>
+                            <strong>Pedido executado em</strong>
+                            <span>
+                              {lead.executed_at ? formatDateOnly(lead.executed_at) : '—'}
+                            </span>
+                          </div>
+
+                          <div>
+                            <strong>Origem</strong>
+                            <span>{leadOriginLabels[lead.origin] || '—'}</span>
                           </div>
                         </div>
 
-                        {followUps.length > 0 && (
-                          <div className="admin-crm-history-list">
-                            {followUps.map((followUp) => (
-                              <div className="admin-crm-history-item" key={followUp.id}>
-                                <div className="admin-crm-history-meta">
-                                  <span>
-                                    {followUpContactTypeLabels[followUp.contact_type]}
-                                  </span>
-                                  <small>{formatDate(followUp.created_at)}</small>
-                                </div>
+                        <div className="admin-crm-message-box">
+                          <strong>Mensagem do cliente</strong>
+                          <p>{lead.message || 'Sem mensagem.'}</p>
+                        </div>
 
-                                <p>{followUp.note}</p>
-
-                                {followUp.next_action && (
-                                  <div className="admin-crm-next-action">
-                                    <strong>Próxima ação:</strong>{' '}
-                                    {followUp.next_action}
-                                  </div>
-                                )}
-
-                                {followUp.next_action_date && (
-                                  <div className="admin-crm-next-action">
-                                    <strong>Data da próxima ação:</strong>{' '}
-                                    {formatDate(followUp.next_action_date)}
-                                  </div>
-                                )}
-
-                                <small>
-                                  Registado por:{' '}
-                                  {followUp.created_by || 'Utilizador não identificado'}
-                                </small>
-                              </div>
-                            ))}
+                        <div className="admin-crm-followup-box">
+                          <div className="admin-crm-followup-title">
+                            <MessageSquareText size={20} />
+                            <div>
+                              <strong>Novo follow-up</strong>
+                              <p>
+                                Regista cada contacto feito com este cliente. O histórico
+                                fica guardado com data, hora e utilizador.
+                              </p>
+                            </div>
                           </div>
-                        )}
+
+                          <div className="admin-two-fields">
+                            <label>
+                              Tipo de contacto
+                              <select
+                                value={currentFollowUpForm.contact_type}
+                                onChange={(event) =>
+                                  updateFollowUpFormField(
+                                    lead.id,
+                                    'contact_type',
+                                    event.target.value as FollowUpContactType
+                                  )
+                                }
+                              >
+                                {followUpContactTypeOptions.map((option) => (
+                                  <option key={option.value} value={option.value}>
+                                    {option.label}
+                                  </option>
+                                ))}
+                              </select>
+                            </label>
+
+                            <label>
+                              Data da próxima ação
+                              <input
+                                type="datetime-local"
+                                value={currentFollowUpForm.next_action_date}
+                                onChange={(event) =>
+                                  updateFollowUpFormField(
+                                    lead.id,
+                                    'next_action_date',
+                                    event.target.value
+                                  )
+                                }
+                              />
+                            </label>
+                          </div>
+
+                          <label>
+                            Próxima ação
+                            <input
+                              value={currentFollowUpForm.next_action}
+                              onChange={(event) =>
+                                updateFollowUpFormField(
+                                  lead.id,
+                                  'next_action',
+                                  event.target.value
+                                )
+                              }
+                              placeholder="Ex: Ligar amanhã, enviar orçamento, aguardar resposta"
+                            />
+                          </label>
+
+                          <label>
+                            Nota do follow-up
+                            <textarea
+                              rows={5}
+                              value={currentFollowUpForm.note}
+                              onChange={(event) =>
+                                updateFollowUpFormField(
+                                  lead.id,
+                                  'note',
+                                  event.target.value
+                                )
+                              }
+                              placeholder="Ex: Contacto realizado. Cliente demonstrou interesse em casa T3..."
+                            />
+                          </label>
+
+                          <button
+                            type="button"
+                            className="admin-save-button"
+                            onClick={() => handleCreateFollowUp(lead)}
+                            disabled={isSaving}
+                          >
+                            <Save size={18} />
+                            Guardar follow-up
+                          </button>
+                        </div>
+
+                        <div className="admin-crm-history">
+                          <div className="admin-crm-history-heading">
+                            <Clock size={20} />
+                            <div>
+                              <strong>Histórico de follow-ups</strong>
+                              <p>
+                                {followUps.length === 0
+                                  ? 'Ainda não existem follow-ups registados.'
+                                  : `${followUps.length} ${
+                                      followUps.length === 1
+                                        ? 'registo encontrado'
+                                        : 'registos encontrados'
+                                    }`}
+                              </p>
+                            </div>
+                          </div>
+
+                          {followUps.length > 0 && (
+                            <div className="admin-crm-history-list">
+                              {followUps.map((followUp) => (
+                                <div className="admin-crm-history-item" key={followUp.id}>
+                                  <div className="admin-crm-history-meta">
+                                    <span>
+                                      {followUpContactTypeLabels[followUp.contact_type]}
+                                    </span>
+                                    <small>{formatDate(followUp.created_at)}</small>
+                                  </div>
+
+                                  <p>{followUp.note}</p>
+
+                                  {followUp.next_action && (
+                                    <div className="admin-crm-next-action">
+                                      <strong>Próxima ação:</strong>{' '}
+                                      {followUp.next_action}
+                                    </div>
+                                  )}
+
+                                  {followUp.next_action_date && (
+                                    <div className="admin-crm-next-action">
+                                      <strong>Data da próxima ação:</strong>{' '}
+                                      {formatDate(followUp.next_action_date)}
+                                    </div>
+                                  )}
+
+                                  <small>
+                                    Registado por:{' '}
+                                    {followUp.created_by ||
+                                      'Utilizador não identificado'}
+                                  </small>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
+                    </>
                   )}
                 </div>
               );
