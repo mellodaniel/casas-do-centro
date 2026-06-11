@@ -19,6 +19,9 @@ export type AnalyticsEvent = {
   device_type: string | null;
   browser: string | null;
   user_agent: string | null;
+  country: string | null;
+  region: string | null;
+  city: string | null;
   metadata: Record<string, unknown>;
   created_at: string;
 };
@@ -36,6 +39,9 @@ export type AnalyticsDashboard = {
   topPages: Array<{ label: string; count: number }>;
   deviceDistribution: Array<{ label: string; count: number }>;
   eventDistribution: Array<{ label: string; count: number }>;
+  countryDistribution: Array<{ label: string; count: number }>;
+  regionDistribution: Array<{ label: string; count: number }>;
+  cityDistribution: Array<{ label: string; count: number }>;
 };
 
 type AnalyticsMetadata = Record<string, unknown>;
@@ -110,16 +116,27 @@ export async function logAnalyticsEvent(
   const pagePath = `${window.location.pathname}${window.location.search}`;
 
   try {
-    await supabase.from(ANALYTICS_EVENTS_TABLE).insert({
-      event_type: eventType,
-      page_path: pagePath,
-      page_title: document.title || null,
-      referrer: document.referrer || null,
-      device_type: getDeviceType(userAgent),
-      browser: getBrowser(userAgent),
-      user_agent: userAgent,
-      metadata,
+    const response = await fetch('/api/analytics', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      keepalive: true,
+      body: JSON.stringify({
+        event_type: eventType,
+        page_path: pagePath,
+        page_title: document.title || null,
+        referrer: document.referrer || null,
+        device_type: getDeviceType(userAgent),
+        browser: getBrowser(userAgent),
+        user_agent: userAgent,
+        metadata,
+      }),
     });
+
+    if (!response.ok) {
+      throw new Error(`Analytics API returned ${response.status}`);
+    }
   } catch (error) {
     console.warn('Analytics event was not recorded:', error);
   }
@@ -186,5 +203,8 @@ export async function getAnalyticsDashboard(): Promise<AnalyticsDashboard> {
     topPages: countBy(pageViews, (event) => event.page_path).slice(0, 8),
     deviceDistribution: countBy(events, (event) => event.device_type).slice(0, 6),
     eventDistribution: countBy(events, (event) => event.event_type).slice(0, 8),
+    countryDistribution: countBy(pageViews, (event) => event.country).slice(0, 8),
+    regionDistribution: countBy(pageViews, (event) => event.region).slice(0, 8),
+    cityDistribution: countBy(pageViews, (event) => event.city).slice(0, 8),
   };
 }
