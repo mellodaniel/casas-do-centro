@@ -2329,3 +2329,105 @@
     padding: 10px 12px;
   }
 }
+
+/* Fase 4.4 - Filtros por período na observabilidade */
+
+.admin-observability-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.admin-observability-periods {
+  background: #ffffff;
+  border: 1px solid rgba(107, 33, 168, 0.12);
+  border-radius: 999px;
+  padding: 5px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  box-shadow: 0 10px 22px rgba(107, 33, 168, 0.045);
+}
+
+.admin-observability-periods button {
+  border: 0;
+  background: transparent;
+  color: #6b21a8;
+  border-radius: 999px;
+  padding: 9px 12px;
+  font-weight: 950;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: 0.18s ease;
+}
+
+.admin-observability-periods button:hover {
+  background: #f8f1ff;
+}
+
+.admin-observability-periods button:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.admin-observability-periods button.admin-observability-period-active {
+  background: #6b21a8;
+  color: #ffffff;
+  box-shadow: 0 8px 18px rgba(107, 33, 168, 0.18);
+}
+
+.admin-observability-period-context {
+  background: #fffaf2;
+  border: 1px solid rgba(122, 72, 0, 0.1);
+  color: #7a4800;
+  border-radius: 999px;
+  padding: 9px 13px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.82rem;
+  font-weight: 850;
+  margin-bottom: 14px;
+}
+
+.admin-observability-period-context strong {
+  color: #4d2e00;
+}
+
+@media (max-width: 920px) {
+  .admin-observability-actions {
+    width: 100%;
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .admin-observability-periods {
+    width: 100%;
+    justify-content: center;
+    border-radius: 18px;
+    flex-wrap: wrap;
+  }
+
+  .admin-observability-periods button {
+    flex: 1;
+  }
+}
+
+@media (max-width: 520px) {
+  .admin-observability-periods {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .admin-observability-periods button {
+    width: 100%;
+  }
+
+  .admin-observability-period-context {
+    width: 100%;
+    justify-content: center;
+    border-radius: 16px;
+  }
+}

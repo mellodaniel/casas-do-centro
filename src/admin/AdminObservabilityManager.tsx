@@ -28,6 +28,13 @@ const eventTypeLabels: Record<string, string> = {
   contact_form_error: 'Erro',
 };
 
+const periodOptions = [
+  { label: 'Hoje', value: 1 },
+  { label: '7 dias', value: 7 },
+  { label: '30 dias', value: 30 },
+  { label: '90 dias', value: 90 },
+];
+
 function formatDateTime(value: string) {
   return new Intl.DateTimeFormat('pt-PT', {
     day: '2-digit',
@@ -131,8 +138,7 @@ function EventTable({ events }: { events: AnalyticsEvent[] }) {
   if (events.length === 0) {
     return (
       <div className="admin-observability-empty">
-        Ainda não há eventos registados. Depois de visitar o site público, esta
-        área começará a apresentar dados.
+        Ainda não há eventos registados para o período selecionado.
       </div>
     );
   }
@@ -175,15 +181,16 @@ function EventTable({ events }: { events: AnalyticsEvent[] }) {
 
 export function AdminObservabilityManager() {
   const [dashboard, setDashboard] = useState<AnalyticsDashboard | null>(null);
+  const [selectedPeriodDays, setSelectedPeriodDays] = useState(30);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
 
-  async function loadDashboard() {
+  async function loadDashboard(periodDays = selectedPeriodDays) {
     setIsLoading(true);
     setErrorMessage('');
 
     try {
-      const data = await getAnalyticsDashboard();
+      const data = await getAnalyticsDashboard(periodDays);
       setDashboard(data);
     } catch (error) {
       console.error(error);
@@ -195,8 +202,13 @@ export function AdminObservabilityManager() {
     }
   }
 
+  function handlePeriodChange(periodDays: number) {
+    setSelectedPeriodDays(periodDays);
+    loadDashboard(periodDays);
+  }
+
   useEffect(() => {
-    loadDashboard();
+    loadDashboard(30);
   }, []);
 
   const recentEvents = useMemo(() => {
@@ -216,6 +228,13 @@ export function AdminObservabilityManager() {
     );
   }, [dashboard]);
 
+  const periodLabel = useMemo(() => {
+    return (
+      periodOptions.find((option) => option.value === selectedPeriodDays)?.label ||
+      `${selectedPeriodDays} dias`
+    );
+  }, [selectedPeriodDays]);
+
   return (
     <section className="admin-card admin-observability-card">
       <div className="admin-observability-top">
@@ -230,15 +249,35 @@ export function AdminObservabilityManager() {
           </div>
         </div>
 
-        <button
-          type="button"
-          className="admin-secondary-button"
-          onClick={loadDashboard}
-          disabled={isLoading}
-        >
-          <RefreshCw size={18} />
-          {isLoading ? 'A atualizar...' : 'Atualizar'}
-        </button>
+        <div className="admin-observability-actions">
+          <div className="admin-observability-periods" aria-label="Filtro por período">
+            {periodOptions.map((option) => (
+              <button
+                type="button"
+                key={option.value}
+                className={
+                  selectedPeriodDays === option.value
+                    ? 'admin-observability-period-active'
+                    : ''
+                }
+                onClick={() => handlePeriodChange(option.value)}
+                disabled={isLoading}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+
+          <button
+            type="button"
+            className="admin-secondary-button"
+            onClick={() => loadDashboard()}
+            disabled={isLoading}
+          >
+            <RefreshCw size={18} />
+            {isLoading ? 'A atualizar...' : 'Atualizar'}
+          </button>
+        </div>
       </div>
 
       {errorMessage && <div className="admin-alert">{errorMessage}</div>}
@@ -247,6 +286,10 @@ export function AdminObservabilityManager() {
         <div className="admin-empty-state">A carregar estatísticas...</div>
       ) : dashboard ? (
         <>
+          <div className="admin-observability-period-context">
+            Dados apresentados para: <strong>{periodLabel}</strong>
+          </div>
+
           <div className="admin-observability-metrics">
             <MetricCard
               icon={<Activity size={20} />}
@@ -256,27 +299,27 @@ export function AdminObservabilityManager() {
             />
             <MetricCard
               icon={<TrendingUp size={20} />}
-              value={dashboard.pageViews7Days}
-              label="7 dias"
+              value={dashboard.selectedPeriodPageViews}
+              label={periodLabel}
               hint="visitas"
             />
             <MetricCard
               icon={<BarChart3 size={20} />}
               value={dashboard.pageViews30Days}
               label="30 dias"
-              hint="visitas"
+              hint="referência"
             />
             <MetricCard
               icon={<MessageCircle size={20} />}
-              value={dashboard.whatsappClicks30Days}
+              value={dashboard.selectedPeriodWhatsappClicks}
               label="WhatsApp"
               hint="cliques"
             />
             <MetricCard
               icon={<MousePointerClick size={20} />}
-              value={dashboard.contactFormSubmits30Days}
+              value={dashboard.selectedPeriodContactFormSubmits}
               label="Pedidos"
-              hint={`${dashboard.conversionRate30Days}% conversão`}
+              hint={`${dashboard.selectedPeriodConversionRate}% conversão`}
             />
             <MetricCard
               icon={<MapPin size={20} />}
@@ -289,7 +332,7 @@ export function AdminObservabilityManager() {
             <div className="admin-observability-panel admin-observability-panel-large">
               <div className="admin-observability-panel-title">
                 <h4>Páginas e eventos</h4>
-                <span>Últimos 30 dias</span>
+                <span>{periodLabel}</span>
               </div>
 
               <div className="admin-observability-split">
@@ -297,7 +340,7 @@ export function AdminObservabilityManager() {
                   <h5>Páginas mais visitadas</h5>
                   <CompactList
                     items={dashboard.topPages}
-                    emptyLabel="Ainda não há visitas registadas."
+                    emptyLabel="Ainda não há visitas registadas neste período."
                   />
                 </div>
 
@@ -308,7 +351,7 @@ export function AdminObservabilityManager() {
                       ...item,
                       label: formatEventType(item.label),
                     }))}
-                    emptyLabel="Ainda não há eventos registados."
+                    emptyLabel="Ainda não há eventos registados neste período."
                   />
                 </div>
               </div>
@@ -355,9 +398,9 @@ export function AdminObservabilityManager() {
 
               <div className="admin-observability-mini-note">
                 <Instagram size={15} />
-                Instagram: <strong>{dashboard.instagramClicks30Days}</strong>
+                Instagram: <strong>{dashboard.selectedPeriodInstagramClicks}</strong>
                 <span />
-                Erros: <strong>{dashboard.contactFormErrors30Days}</strong>
+                Erros: <strong>{dashboard.selectedPeriodContactFormErrors}</strong>
               </div>
             </div>
           </div>
@@ -365,7 +408,7 @@ export function AdminObservabilityManager() {
           <div className="admin-observability-panel">
             <div className="admin-observability-panel-title">
               <h4>Eventos recentes</h4>
-              <span>Mostramos apenas os 12 mais recentes para manter a leitura limpa</span>
+              <span>Mostramos apenas os 12 mais recentes do período selecionado</span>
             </div>
 
             <EventTable events={recentEvents} />

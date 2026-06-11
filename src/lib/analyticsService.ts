@@ -28,13 +28,20 @@ export type AnalyticsEvent = {
 
 export type AnalyticsDashboard = {
   events: AnalyticsEvent[];
+  selectedPeriodDays: number;
   pageViewsToday: number;
   pageViews7Days: number;
   pageViews30Days: number;
+  selectedPeriodPageViews: number;
   whatsappClicks30Days: number;
   instagramClicks30Days: number;
   contactFormSubmits30Days: number;
   contactFormErrors30Days: number;
+  selectedPeriodWhatsappClicks: number;
+  selectedPeriodInstagramClicks: number;
+  selectedPeriodContactFormSubmits: number;
+  selectedPeriodContactFormErrors: number;
+  selectedPeriodConversionRate: number;
   conversionRate30Days: number;
   topPages: Array<{ label: string; count: number }>;
   deviceDistribution: Array<{ label: string; count: number }>;
@@ -142,7 +149,16 @@ export async function logAnalyticsEvent(
   }
 }
 
-export async function getAnalyticsDashboard(): Promise<AnalyticsDashboard> {
+export async function getAnalyticsDashboard(
+  periodDays = 30
+): Promise<AnalyticsDashboard> {
+  const normalizedPeriodDays = [1, 7, 30, 90].includes(periodDays)
+    ? periodDays
+    : 30;
+
+  const sinceSelectedPeriod = new Date();
+  sinceSelectedPeriod.setDate(sinceSelectedPeriod.getDate() - normalizedPeriodDays);
+
   const since30Days = new Date();
   since30Days.setDate(since30Days.getDate() - 30);
 
@@ -155,7 +171,7 @@ export async function getAnalyticsDashboard(): Promise<AnalyticsDashboard> {
   const { data, error } = await supabase
     .from(ANALYTICS_EVENTS_TABLE)
     .select('*')
-    .gte('created_at', since30Days.toISOString())
+    .gte('created_at', sinceSelectedPeriod.toISOString())
     .order('created_at', { ascending: false })
     .limit(5000);
 
@@ -171,19 +187,50 @@ export async function getAnalyticsDashboard(): Promise<AnalyticsDashboard> {
   const pageViews7Days = pageViews.filter((event) =>
     isAfterOrEqual(event.created_at, since7Days)
   ).length;
-  const pageViews30Days = pageViews.length;
+  const pageViews30Days = pageViews.filter((event) =>
+    isAfterOrEqual(event.created_at, since30Days)
+  ).length;
+  const selectedPeriodPageViews = pageViews.length;
   const whatsappClicks30Days = events.filter(
-    (event) => event.event_type === 'whatsapp_click'
+    (event) =>
+      event.event_type === 'whatsapp_click' &&
+      isAfterOrEqual(event.created_at, since30Days)
   ).length;
   const instagramClicks30Days = events.filter(
-    (event) => event.event_type === 'instagram_click'
+    (event) =>
+      event.event_type === 'instagram_click' &&
+      isAfterOrEqual(event.created_at, since30Days)
   ).length;
   const contactFormSubmits30Days = events.filter(
-    (event) => event.event_type === 'contact_form_submit'
+    (event) =>
+      event.event_type === 'contact_form_submit' &&
+      isAfterOrEqual(event.created_at, since30Days)
   ).length;
   const contactFormErrors30Days = events.filter(
+    (event) =>
+      event.event_type === 'contact_form_error' &&
+      isAfterOrEqual(event.created_at, since30Days)
+  ).length;
+
+  const selectedPeriodWhatsappClicks = events.filter(
+    (event) => event.event_type === 'whatsapp_click'
+  ).length;
+  const selectedPeriodInstagramClicks = events.filter(
+    (event) => event.event_type === 'instagram_click'
+  ).length;
+  const selectedPeriodContactFormSubmits = events.filter(
+    (event) => event.event_type === 'contact_form_submit'
+  ).length;
+  const selectedPeriodContactFormErrors = events.filter(
     (event) => event.event_type === 'contact_form_error'
   ).length;
+
+  const selectedPeriodConversionRate =
+    selectedPeriodPageViews > 0
+      ? Number(
+          ((selectedPeriodContactFormSubmits / selectedPeriodPageViews) * 100).toFixed(1)
+        )
+      : 0;
 
   const conversionRate30Days =
     pageViews30Days > 0
@@ -192,13 +239,20 @@ export async function getAnalyticsDashboard(): Promise<AnalyticsDashboard> {
 
   return {
     events,
+    selectedPeriodDays: normalizedPeriodDays,
     pageViewsToday,
     pageViews7Days,
     pageViews30Days,
+    selectedPeriodPageViews,
     whatsappClicks30Days,
     instagramClicks30Days,
     contactFormSubmits30Days,
     contactFormErrors30Days,
+    selectedPeriodWhatsappClicks,
+    selectedPeriodInstagramClicks,
+    selectedPeriodContactFormSubmits,
+    selectedPeriodContactFormErrors,
+    selectedPeriodConversionRate,
     conversionRate30Days,
     topPages: countBy(pageViews, (event) => event.page_path).slice(0, 8),
     deviceDistribution: countBy(events, (event) => event.device_type).slice(0, 6),
