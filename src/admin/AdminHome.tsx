@@ -8,6 +8,8 @@ import {
   Image,
   MessageSquareText,
   Handshake,
+  BarChart3,
+  MousePointerClick,
 } from 'lucide-react';
 
 type AdminHomeProps = {
@@ -156,6 +158,44 @@ export function AdminHome({ onNavigate }: AdminHomeProps) {
               <span>
                 <Handshake size={15} />
                 Follow-up
+              </span>
+            </div>
+          </div>
+
+          <div className="admin-home-card-footer">
+            <strong>Abrir módulo</strong>
+            <ArrowRight size={19} />
+          </div>
+        </button>
+
+        <button
+          type="button"
+          className="admin-home-card admin-home-card-observability"
+          onClick={() => onNavigate('/admin/observabilidade')}
+        >
+          <div className="admin-home-card-top">
+            <div className="admin-home-card-icon admin-home-card-icon-observability">
+              <BarChart3 size={30} />
+            </div>
+
+            <span className="admin-home-card-tag">Análise</span>
+          </div>
+
+          <div className="admin-home-card-body">
+            <h3>Observabilidade</h3>
+            <p>
+              Acompanhar visitas, páginas, cliques, pedidos enviados e atividade
+              recente do website.
+            </p>
+
+            <div className="admin-home-card-features">
+              <span>
+                <MousePointerClick size={15} />
+                Eventos
+              </span>
+              <span>
+                <BarChart3 size={15} />
+                Métricas
               </span>
             </div>
           </div>

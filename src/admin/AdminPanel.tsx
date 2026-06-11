@@ -7,6 +7,7 @@ import {
   LogOut,
   UserRound,
   Users,
+  BarChart3,
 } from 'lucide-react';
 import {
   getCurrentAdminUser,
@@ -21,9 +22,10 @@ import { AdminHome } from './AdminHome';
 import { AdminCrmManager } from './AdminCrmManager';
 import { AdminUsersManager } from './AdminUsersManager';
 import { AdminContentManager } from './AdminContentManager';
+import { AdminObservabilityManager } from './AdminObservabilityManager';
 import './admin.css';
 
-type AdminModule = 'home' | 'conteudo' | 'crm' | 'utilizadores';
+type AdminModule = 'home' | 'conteudo' | 'crm' | 'observabilidade' | 'utilizadores';
 
 function getCurrentAdminModuleFromPath(pathname: string): AdminModule {
   if (pathname.startsWith('/admin/conteudo')) {
@@ -32,6 +34,10 @@ function getCurrentAdminModuleFromPath(pathname: string): AdminModule {
 
   if (pathname.startsWith('/admin/crm')) {
     return 'crm';
+  }
+
+  if (pathname.startsWith('/admin/observabilidade')) {
+    return 'observabilidade';
   }
 
   if (pathname.startsWith('/admin/utilizadores')) {
@@ -50,6 +56,10 @@ function getModulePath(module: AdminModule) {
     return '/admin/crm';
   }
 
+  if (module === 'observabilidade') {
+    return '/admin/observabilidade';
+  }
+
   if (module === 'utilizadores') {
     return '/admin/utilizadores';
   }
@@ -66,6 +76,10 @@ function getModuleTitle(module: AdminModule) {
     return 'CRM / Pedidos';
   }
 
+  if (module === 'observabilidade') {
+    return 'Observabilidade';
+  }
+
   if (module === 'utilizadores') {
     return 'Utilizadores';
   }
@@ -80,6 +94,10 @@ function getModuleDescription(module: AdminModule) {
 
   if (module === 'crm') {
     return 'Gerir contactos, pedidos, follow-ups e oportunidades comerciais.';
+  }
+
+  if (module === 'observabilidade') {
+    return 'Acompanhar visitas, eventos, conversões e atividade do website.';
   }
 
   if (module === 'utilizadores') {
@@ -225,6 +243,21 @@ export function AdminPanel() {
             </a>
           </div>
 
+          <div className="admin-sidebar-nav-group admin-sidebar-nav-observability">
+            <span>Análise</span>
+
+            <a
+              href="/admin/observabilidade"
+              onClick={(event) => handleModuleNavigation(event, 'observabilidade')}
+              className={
+                currentModule === 'observabilidade' ? 'admin-nav-active' : ''
+              }
+            >
+              <BarChart3 size={17} />
+              Observabilidade
+            </a>
+          </div>
+
           <div className="admin-sidebar-nav-group admin-sidebar-nav-management">
             <span>Gestão interna</span>
 
@@ -310,6 +343,8 @@ export function AdminPanel() {
         {currentModule === 'conteudo' && <AdminContentManager />}
 
         {currentModule === 'crm' && <AdminCrmManager />}
+
+        {currentModule === 'observabilidade' && <AdminObservabilityManager />}
 
         {currentModule === 'utilizadores' && <AdminUsersManager />}
       </main>

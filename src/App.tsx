@@ -24,6 +24,7 @@ import {
   type ContentPatch,
 } from './lib/siteContentService';
 import { createCrmLead } from './lib/crmService';
+import { logAnalyticsEvent } from './lib/analyticsService';
 
 type ContactFormState = {
   firstName: string;
@@ -496,6 +497,70 @@ function App() {
     [contentPatch]
   );
 
+  useEffect(() => {
+    if (isAdminPage) {
+      return;
+    }
+
+    void logAnalyticsEvent('page_view', {
+      page: currentPage,
+      path: window.location.pathname,
+    });
+  }, [currentPage, isAdminPage]);
+
+  useEffect(() => {
+    if (isAdminPage) {
+      return;
+    }
+
+    function handleDocumentClick(event: MouseEvent) {
+      const target = event.target as HTMLElement | null;
+      const anchorElement = target?.closest('a');
+
+      if (!anchorElement) {
+        return;
+      }
+
+      const href = anchorElement.getAttribute('href') || '';
+      const label = anchorElement.textContent?.trim() || '';
+
+      if (href.includes('wa.me')) {
+        void logAnalyticsEvent('whatsapp_click', {
+          page: currentPage,
+          label,
+        });
+        return;
+      }
+
+      if (href.includes('instagram.com')) {
+        void logAnalyticsEvent('instagram_click', {
+          page: currentPage,
+          label,
+        });
+        return;
+      }
+
+      if (
+        anchorElement.classList.contains('btn') ||
+        anchorElement.classList.contains('nav-cta') ||
+        anchorElement.classList.contains('section-action-link') ||
+        anchorElement.classList.contains('home-questions-highlight-card')
+      ) {
+        void logAnalyticsEvent('cta_click', {
+          page: currentPage,
+          label,
+          href,
+        });
+      }
+    }
+
+    document.addEventListener('click', handleDocumentClick);
+
+    return () => {
+      document.removeEventListener('click', handleDocumentClick);
+    };
+  }, [currentPage, isAdminPage]);
+
   const galleryImagesBySection = useMemo(
     () => normalizeGalleryImagesBySection(contentPatch, content.gallery.items.length),
     [contentPatch, content.gallery.items.length]
@@ -645,6 +710,10 @@ function App() {
     if (validationMessage) {
       setContactStatusType('error');
       setContactStatusMessage(validationMessage);
+      void logAnalyticsEvent('contact_form_error', {
+        page: currentPage,
+        reason: validationMessage,
+      });
       return;
     }
 
@@ -663,12 +732,25 @@ function App() {
         origin: 'website',
       });
 
+      void logAnalyticsEvent('contact_form_submit', {
+        page: currentPage,
+        projectType: contactForm.projectType || 'Não indicado',
+        hasLand: contactForm.hasLand || 'Não indicado',
+        district: contactForm.district || 'Não indicado',
+        county: contactForm.county || 'Não indicado',
+      });
+
       setContactForm(emptyContactForm);
       setContactStatusType('success');
       setContactStatusMessage(
         'Pedido enviado com sucesso. Os seus dados foram recebidos e entraremos em contacto brevemente.'
       );
     } catch {
+      void logAnalyticsEvent('contact_form_error', {
+        page: currentPage,
+        reason: 'Erro ao enviar pedido para o CRM',
+      });
+
       setContactStatusType('error');
       setContactStatusMessage(
         'Não foi possível enviar o pedido neste momento. Pode tentar novamente ou contactar por WhatsApp.'
