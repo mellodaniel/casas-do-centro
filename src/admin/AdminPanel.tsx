@@ -199,7 +199,7 @@ export function AdminPanel() {
       <aside className="admin-sidebar">
         <div>
           <span className="admin-kicker">Área administrativa</span>
-          <h1>Casas do Centro</h1>
+          <h1>Chalés do Centro</h1>
           <p>{getModuleDescription(currentModule)}</p>
         </div>
 

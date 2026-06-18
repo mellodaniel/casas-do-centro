@@ -75,7 +75,7 @@ export function AdminHome({ onNavigate }: AdminHomeProps) {
       <section className="admin-home-hero">
         <div>
           <span className="admin-kicker">Painel administrativo</span>
-          <h2>Gestão Casas do Centro</h2>
+          <h2>Gestão Chalés do Centro</h2>
           <p>
             Gestão centralizada do website, contactos comerciais e acessos ao painel.
             Escolhe abaixo o módulo que queres administrar.

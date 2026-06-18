@@ -14,7 +14,6 @@ import {
 } from 'lucide-react';
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import './index.css';
-import logo from './assets/logo.png';
 import heroImage from './assets/hero-casa-madeira.jpeg';
 import { siteContent } from './data/siteContent';
 import { AdminPanel } from './admin/AdminPanel';
@@ -48,6 +47,7 @@ type DistrictCountyOption = {
 type PublicPage = 'home' | 'galeria' | 'duvidas' | 'contacto';
 
 const INSTAGRAM_URL = 'https://www.instagram.com/casasdocentro/';
+const logo = '/logo-chales-do-centro.jpeg';
 
 const DEFAULT_HOMEPAGE_SETTINGS = {
   modelsCount: 4,
@@ -849,7 +849,7 @@ function App() {
               rel="noreferrer"
             >
               <MessageCircle size={22} />
-              Falar pelo WhatsApp
+              Falar connosco
             </a>
 
             <a
@@ -859,7 +859,7 @@ function App() {
               rel="noreferrer"
             >
               <Instagram size={22} />
-              Seguir no Instagram
+              Ver Instagram
             </a>
           </div>
 
@@ -1035,7 +1035,7 @@ function App() {
           />
 
           <button type="submit" disabled={isSubmittingContact}>
-            {isSubmittingContact ? 'A enviar...' : 'Enviar pedido de orçamento'}
+            {isSubmittingContact ? 'A enviar...' : 'Pedir informações gratuitas'}
           </button>
 
           <small>{content.contactSection.formNote}</small>
@@ -1148,8 +1148,8 @@ function App() {
                     <HelpCircle size={26} />
                   </span>
                   <span>
-                    <strong>Dúvidas sobre licenciamento, medidas ou orçamento?</strong>
-                    <small>Veja as respostas principais antes de pedir a sua proposta.</small>
+                    <strong>Dúvidas sobre licenciamento, modelos ou orçamento?</strong>
+                    <small>Veja as respostas principais antes de avançar.</small>
                   </span>
                   <ArrowRight size={20} />
                 </a>
@@ -1199,7 +1199,7 @@ function App() {
               <div className="section-heading section-heading-with-action">
                 <div>
                   <span className="section-label">{content.gallery.label}</span>
-                  <h2>Veja inspirações para o seu projeto.</h2>
+                  <h2>Inspire-se para o seu futuro chalé.</h2>
                   <p>{content.gallery.description}</p>
                 </div>
 
@@ -1217,7 +1217,7 @@ function App() {
           <div className="container home-final-cta-card">
             <div>
               <span className="section-label light">Próximo passo</span>
-              <h2>Quer avaliar uma solução para o seu terreno ou projeto?</h2>
+              <h2>Quer avaliar um chalé para o seu terreno ou projeto?</h2>
               <p>
                 Envie o pedido e receba um contacto para analisar modelo, área,
                 localização e possibilidades disponíveis.
@@ -1416,8 +1416,8 @@ function App() {
         href={INSTAGRAM_URL}
         target="_blank"
         rel="noreferrer"
-        aria-label="Seguir no Instagram"
-        title="Seguir no Instagram"
+        aria-label="Ver Instagram"
+        title="Ver Instagram"
       >
         <Instagram size={28} />
       </a>
@@ -1427,8 +1427,8 @@ function App() {
         href={`https://wa.me/${content.contact.whatsappNumber}?text=${whatsappMessage}`}
         target="_blank"
         rel="noreferrer"
-        aria-label="Falar pelo WhatsApp"
-        title="Falar pelo WhatsApp"
+        aria-label="Falar connosco"
+        title="Falar connosco"
       >
         <MessageCircle size={28} />
       </a>
