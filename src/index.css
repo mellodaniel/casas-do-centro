@@ -1869,3 +1869,643 @@ body {
     font-size: clamp(2.05rem, 10vw, 3.05rem);
   }
 }
+
+/* Correção logo header - Chalés do Centro */
+.logo-area {
+  min-width: 720px !important;
+}
+
+.logo-area img {
+  width: 680px !important;
+  max-height: 240px !important;
+  object-fit: contain !important;
+  display: block !important;
+}
+
+.header-content {
+  min-height: 260px !important;
+}
+
+.nav {
+  margin-left: auto;
+}
+
+@media (max-width: 980px) {
+  .nav {
+    top: 260px !important;
+  }
+}
+
+@media (max-width: 620px) {
+  .header-content {
+    min-height: 150px !important;
+  }
+
+  .logo-area {
+    min-width: 320px !important;
+  }
+
+  .logo-area img {
+    width: 300px !important;
+    max-height: 130px !important;
+  }
+
+  .nav {
+    top: 150px !important;
+  }
+}
+
+/* Fase 5.4 - Logo 2x maior no header */
+.header-content {
+  gap: 28px !important;
+}
+
+.logo-area {
+  flex: 0 0 auto !important;
+}
+
+.nav {
+  flex: 1 1 auto !important;
+  justify-content: flex-end !important;
+  min-width: 0 !important;
+}
+
+@media (max-width: 1280px) {
+  .logo-area {
+    min-width: 520px !important;
+  }
+
+  .logo-area img {
+    width: 500px !important;
+    max-height: 190px !important;
+  }
+
+  .header-content {
+    min-height: 210px !important;
+  }
+}
+
+@media (max-width: 1080px) {
+  .logo-area {
+    min-width: 420px !important;
+  }
+
+  .logo-area img {
+    width: 400px !important;
+    max-height: 160px !important;
+  }
+
+  .header-content {
+    min-height: 178px !important;
+  }
+}
+
+@media (max-width: 980px) {
+  .header-content {
+    min-height: 154px !important;
+  }
+
+  .logo-area {
+    min-width: 360px !important;
+  }
+
+  .logo-area img {
+    width: 340px !important;
+    max-height: 135px !important;
+  }
+
+  .nav {
+    top: 154px !important;
+  }
+}
+
+@media (max-width: 620px) {
+  .header-content {
+    min-height: 132px !important;
+  }
+
+  .logo-area {
+    min-width: 290px !important;
+  }
+
+  .logo-area img {
+    width: 275px !important;
+    max-height: 115px !important;
+  }
+
+  .nav {
+    top: 132px !important;
+  }
+}
+
+/* Fase 5.5 - Alinhamento premium do header, logo à esquerda e menu com presença */
+
+.header {
+  background: rgba(255, 250, 244, 0.94) !important;
+  box-shadow: 0 8px 28px rgba(35, 28, 20, 0.045) !important;
+}
+
+.header .container {
+  width: min(1320px, calc(100% - 56px)) !important;
+}
+
+.header-content {
+  min-height: 210px !important;
+  justify-content: flex-start !important;
+  gap: 44px !important;
+}
+
+.logo-area {
+  min-width: 520px !important;
+  margin-left: 0 !important;
+  flex: 0 0 520px !important;
+  justify-content: flex-start !important;
+}
+
+.logo-area img {
+  width: 500px !important;
+  max-height: 185px !important;
+  object-fit: contain !important;
+  object-position: left center !important;
+  display: block !important;
+}
+
+.nav {
+  margin-left: auto !important;
+  flex: 1 1 auto !important;
+  justify-content: flex-end !important;
+  gap: 8px !important;
+  font-size: 0.96rem !important;
+  font-weight: 850 !important;
+}
+
+.nav a {
+  position: relative !important;
+  color: rgba(43, 41, 37, 0.82) !important;
+  padding: 12px 13px !important;
+  border-radius: 999px !important;
+  transition: 0.22s ease !important;
+}
+
+.nav a:not(.nav-cta)::after {
+  content: '' !important;
+  position: absolute !important;
+  left: 16px !important;
+  right: 16px !important;
+  bottom: 7px !important;
+  height: 2px !important;
+  border-radius: 999px !important;
+  background: var(--wood-2) !important;
+  transform: scaleX(0) !important;
+  transform-origin: center !important;
+  transition: 0.22s ease !important;
+}
+
+.nav a:not(.nav-cta):hover {
+  color: var(--wood) !important;
+  background: rgba(184, 106, 55, 0.07) !important;
+}
+
+.nav a:not(.nav-cta):hover::after {
+  transform: scaleX(1) !important;
+}
+
+.nav-cta {
+  padding: 14px 22px !important;
+  font-size: 0.96rem !important;
+  margin-left: 8px !important;
+  box-shadow: 0 16px 34px rgba(184, 106, 55, 0.24) !important;
+}
+
+.hero,
+.hero-compact {
+  min-height: calc(100vh - 210px) !important;
+}
+
+@media (max-width: 1380px) {
+  .header .container {
+    width: min(1240px, calc(100% - 44px)) !important;
+  }
+
+  .header-content {
+    min-height: 185px !important;
+    gap: 32px !important;
+  }
+
+  .logo-area {
+    min-width: 430px !important;
+    flex-basis: 430px !important;
+  }
+
+  .logo-area img {
+    width: 410px !important;
+    max-height: 160px !important;
+  }
+
+  .nav {
+    gap: 5px !important;
+    font-size: 0.88rem !important;
+  }
+
+  .nav a {
+    padding: 11px 10px !important;
+  }
+
+  .nav-cta {
+    padding: 13px 18px !important;
+  }
+
+  .hero,
+  .hero-compact {
+    min-height: calc(100vh - 185px) !important;
+  }
+}
+
+@media (max-width: 1180px) {
+  .header-content {
+    min-height: 160px !important;
+    gap: 24px !important;
+  }
+
+  .logo-area {
+    min-width: 350px !important;
+    flex-basis: 350px !important;
+  }
+
+  .logo-area img {
+    width: 335px !important;
+    max-height: 138px !important;
+  }
+
+  .nav {
+    font-size: 0.82rem !important;
+    gap: 3px !important;
+  }
+
+  .nav a {
+    padding: 10px 8px !important;
+  }
+
+  .nav-cta {
+    padding: 12px 14px !important;
+  }
+
+  .hero,
+  .hero-compact {
+    min-height: calc(100vh - 160px) !important;
+  }
+}
+
+@media (max-width: 980px) {
+  .header .container {
+    width: min(100% - 28px, 1180px) !important;
+  }
+
+  .header-content {
+    min-height: 132px !important;
+  }
+
+  .logo-area {
+    min-width: 290px !important;
+    flex-basis: 290px !important;
+  }
+
+  .logo-area img {
+    width: 275px !important;
+    max-height: 112px !important;
+  }
+
+  .menu-button {
+    margin-left: auto !important;
+  }
+
+  .nav {
+    top: 132px !important;
+    gap: 0 !important;
+    font-size: 0.95rem !important;
+  }
+
+  .nav a {
+    border-radius: 14px !important;
+    padding: 14px 12px !important;
+  }
+
+  .nav-cta {
+    margin-left: 0 !important;
+    margin-top: 10px !important;
+    text-align: center !important;
+  }
+
+  .hero,
+  .hero-compact {
+    min-height: auto !important;
+  }
+}
+
+@media (max-width: 620px) {
+  .header-content {
+    min-height: 112px !important;
+  }
+
+  .logo-area {
+    min-width: 230px !important;
+    flex-basis: 230px !important;
+  }
+
+  .logo-area img {
+    width: 220px !important;
+    max-height: 92px !important;
+  }
+
+  .nav {
+    top: 112px !important;
+  }
+}
+
+/* Fase 5.6 - Logo do footer com fundo branco */
+.footer img {
+  background: #ffffff !important;
+  padding: 18px !important;
+  border-radius: 0 !important;
+  width: 230px !important;
+  max-width: 80% !important;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.16) !important;
+  border: 1px solid rgba(255, 255, 255, 0.72) !important;
+}
+
+@media (max-width: 620px) {
+  .footer img {
+    width: 210px !important;
+    padding: 16px !important;
+  }
+}
+
+/* Fase 5.7 - Polimento final antes de produção */
+
+/* Header mais equilibrado: logo grande, mas sem dominar a primeira dobra */
+.header {
+  background: rgba(255, 250, 244, 0.95) !important;
+  box-shadow: 0 8px 26px rgba(35, 28, 20, 0.04) !important;
+}
+
+.header .container {
+  width: min(1320px, calc(100% - 56px)) !important;
+}
+
+.header-content {
+  min-height: 170px !important;
+  justify-content: flex-start !important;
+  gap: 42px !important;
+}
+
+.logo-area {
+  min-width: 440px !important;
+  flex: 0 0 440px !important;
+  margin-left: 0 !important;
+  justify-content: flex-start !important;
+}
+
+.logo-area img {
+  width: 420px !important;
+  max-height: 150px !important;
+  object-fit: contain !important;
+  object-position: left center !important;
+  display: block !important;
+}
+
+.nav {
+  margin-left: auto !important;
+  flex: 1 1 auto !important;
+  justify-content: flex-end !important;
+  gap: 8px !important;
+  font-size: 0.95rem !important;
+  font-weight: 850 !important;
+}
+
+.nav a {
+  position: relative !important;
+  color: rgba(43, 41, 37, 0.82) !important;
+  padding: 12px 13px !important;
+  border-radius: 999px !important;
+  transition: 0.22s ease !important;
+}
+
+.nav a:not(.nav-cta)::after {
+  content: '' !important;
+  position: absolute !important;
+  left: 16px !important;
+  right: 16px !important;
+  bottom: 7px !important;
+  height: 2px !important;
+  border-radius: 999px !important;
+  background: var(--wood-2) !important;
+  transform: scaleX(0) !important;
+  transform-origin: center !important;
+  transition: 0.22s ease !important;
+}
+
+.nav a:not(.nav-cta):hover {
+  color: var(--wood) !important;
+  background: rgba(184, 106, 55, 0.07) !important;
+}
+
+.nav a:not(.nav-cta):hover::after {
+  transform: scaleX(1) !important;
+}
+
+.nav-cta {
+  padding: 14px 22px !important;
+  font-size: 0.96rem !important;
+  margin-left: 8px !important;
+  box-shadow: 0 16px 34px rgba(184, 106, 55, 0.24) !important;
+}
+
+/* Hero mais leve e coerente com marca premium */
+.hero,
+.hero-compact {
+  min-height: calc(100vh - 170px) !important;
+}
+
+.hero h1 {
+  font-size: clamp(2.9rem, 5.45vw, 5.45rem) !important;
+  line-height: 1 !important;
+  letter-spacing: -0.045em !important;
+}
+
+.hero h2 {
+  color: #35722d !important;
+  font-size: clamp(1.08rem, 1.85vw, 1.42rem) !important;
+}
+
+.hero p {
+  color: #676158 !important;
+}
+
+.hero-main-image {
+  box-shadow: 0 22px 58px rgba(35, 28, 20, 0.075) !important;
+}
+
+.floating-card {
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.11) !important;
+}
+
+/* Footer: logo em cartão branco intencional, sem parecer remendo */
+.footer img {
+  background: #ffffff !important;
+  padding: 16px 20px !important;
+  border-radius: 18px !important;
+  width: 230px !important;
+  max-width: 80% !important;
+  box-shadow: 0 18px 38px rgba(0, 0, 0, 0.14) !important;
+  border: 1px solid rgba(255, 255, 255, 0.78) !important;
+}
+
+/* Responsivo */
+@media (max-width: 1380px) {
+  .header .container {
+    width: min(1240px, calc(100% - 44px)) !important;
+  }
+
+  .header-content {
+    min-height: 154px !important;
+    gap: 30px !important;
+  }
+
+  .logo-area {
+    min-width: 360px !important;
+    flex-basis: 360px !important;
+  }
+
+  .logo-area img {
+    width: 345px !important;
+    max-height: 132px !important;
+  }
+
+  .nav {
+    gap: 5px !important;
+    font-size: 0.87rem !important;
+  }
+
+  .nav a {
+    padding: 11px 10px !important;
+  }
+
+  .nav-cta {
+    padding: 13px 18px !important;
+  }
+
+  .hero,
+  .hero-compact {
+    min-height: calc(100vh - 154px) !important;
+  }
+}
+
+@media (max-width: 1180px) {
+  .header-content {
+    min-height: 136px !important;
+    gap: 22px !important;
+  }
+
+  .logo-area {
+    min-width: 300px !important;
+    flex-basis: 300px !important;
+  }
+
+  .logo-area img {
+    width: 285px !important;
+    max-height: 112px !important;
+  }
+
+  .nav {
+    font-size: 0.81rem !important;
+    gap: 3px !important;
+  }
+
+  .nav a {
+    padding: 10px 8px !important;
+  }
+
+  .nav-cta {
+    padding: 12px 14px !important;
+  }
+
+  .hero,
+  .hero-compact {
+    min-height: calc(100vh - 136px) !important;
+  }
+}
+
+@media (max-width: 980px) {
+  .header .container {
+    width: min(100% - 28px, 1180px) !important;
+  }
+
+  .header-content {
+    min-height: 116px !important;
+  }
+
+  .logo-area {
+    min-width: 250px !important;
+    flex-basis: 250px !important;
+  }
+
+  .logo-area img {
+    width: 235px !important;
+    max-height: 96px !important;
+  }
+
+  .menu-button {
+    margin-left: auto !important;
+  }
+
+  .nav {
+    top: 116px !important;
+    gap: 0 !important;
+    font-size: 0.95rem !important;
+  }
+
+  .nav a {
+    border-radius: 14px !important;
+    padding: 14px 12px !important;
+  }
+
+  .nav-cta {
+    margin-left: 0 !important;
+    margin-top: 10px !important;
+    text-align: center !important;
+  }
+
+  .hero,
+  .hero-compact {
+    min-height: auto !important;
+  }
+}
+
+@media (max-width: 620px) {
+  .header-content {
+    min-height: 96px !important;
+  }
+
+  .logo-area {
+    min-width: 210px !important;
+    flex-basis: 210px !important;
+  }
+
+  .logo-area img {
+    width: 198px !important;
+    max-height: 82px !important;
+  }
+
+  .nav {
+    top: 96px !important;
+  }
+
+  .hero h1 {
+    font-size: clamp(2.25rem, 10.8vw, 3.25rem) !important;
+  }
+
+  .footer img {
+    width: 210px !important;
+    padding: 14px 18px !important;
+  }
+}

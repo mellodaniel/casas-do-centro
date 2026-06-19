@@ -47,7 +47,7 @@ type DistrictCountyOption = {
 type PublicPage = 'home' | 'galeria' | 'duvidas' | 'contacto';
 
 const INSTAGRAM_URL = 'https://www.instagram.com/casasdocentro/';
-const logo = '/logo-chales-do-centro.jpeg';
+const logo = '/logo-chales-do-centro.png';
 
 const DEFAULT_HOMEPAGE_SETTINGS = {
   modelsCount: 4,

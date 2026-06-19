@@ -36,7 +36,7 @@ export const siteContent = {
 
   hero: {
     eyebrow: 'Chalés de madeira no Centro de Portugal',
-    title: 'O seu chalé de madeira começa aqui.',
+    title: 'O refúgio de madeira que começa no Centro.',
     subtitle: 'Conforto natural, design acolhedor e soluções adaptadas ao seu projeto.',
     description:
       'Na Chalés do Centro - Casas de Madeira, apresentamos soluções em madeira para quem procura conforto, sustentabilidade, estética natural e um acompanhamento próximo desde o primeiro contacto. As casas partem de modelos definidos pela fábrica, com possibilidade de ajustes de tipologia e áreas conforme disponibilidade.',
